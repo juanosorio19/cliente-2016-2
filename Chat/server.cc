@@ -23,8 +23,13 @@ public:
       : name(name),
         password(pwd),
         netId(id),
+        
         connected(false) {}
+
   bool isPassword(const string &pwd) const { return password == pwd; }
+
+  bool logged( ) const { return connected; }
+
   void connect(const string &id) {
     connected = true;
     netId = id;
@@ -37,6 +42,7 @@ private:
   // Connected users
   unordered_map<string, User> users;
   socket &sckt;
+  unordered_map<string,vector<string>> groups;
 
 public:
   ServerState(socket &s) : sckt(s) {}
@@ -50,12 +56,19 @@ public:
       return true;
     }
   }
+
+  bool isConnected(const string &name) { 
+    bool ok = users[name].logged(); 
+    return ok; 
+  }
+
   bool login(const string &name, const string &pwd, const string &id) {
     if (users.count(name) > 0) {
       // User is registered
       bool ok = users[name].isPassword(pwd);
-      if (ok)
+      if (ok){
         users[name].connect(id);
+        groups["default"].push_back(name); }
       return ok;
     }
     return false;
@@ -64,6 +77,29 @@ public:
     message m;
     m << users[dest].identity() << text;
     send(m);
+  }
+
+  void sendGroup(const string &dest, const string &text) {
+    //message m;
+    cout<< "Hola estoy antes de entrar al for";
+    for (int i = 0; i < groups[dest].size(); ++i)
+    {
+
+      cout<<endl<<i<<" "<<groups[dest][i]<< endl;
+
+      sendMessage(groups[dest][i],text);
+
+      //m << groups[dest][i].identity() << text;
+      //send(m);
+      
+    }
+    
+  }
+
+  void registerGroup(const string &group,const string &sender, const string &name) {
+
+    groups[group].push_back(name);
+    
   }
 };
 
@@ -100,6 +136,37 @@ void sendMessage(message &msg, const string &sender, ServerState &server) {
   server.sendMessage(dest, text);
 }
 
+void sendGroup(message &msg, const string &sender, ServerState &server) {
+  string group;
+  msg >> group;
+
+  string text;
+  msg >> text;
+
+  cout<< "Hola estoy antes de entrar al metodo";
+  server.sendGroup(group, text);
+}
+
+void registerGroup(message &msg, const string &sender, ServerState &server) {
+  
+  string group;
+  msg >> group;
+
+  string userName;
+  msg>> userName;
+  
+  if (server.isConnected(userName)) {// si el usuario esta logueado
+
+    server.registerGroup(group,sender,userName);
+    //cout << "User " << userName << " joins the chat server" << endl; // entonces llamemos al metodo register group
+
+
+
+  } else {
+    cerr << "Wrong user/password " << endl; // si no, pues entonces no juju.
+  }
+}
+
 void dispatch(message &msg, ServerState &server) {
   assert(msg.parts() > 2);
   string sender;
@@ -115,7 +182,15 @@ void dispatch(message &msg, ServerState &server) {
     sendMessage(msg, sender, server);
   } else if (action == "register") {
     newUser(msg, sender, server);
-  }
+  } else if (action == "gregister") {
+    registerGroup(msg, sender, server);
+  } else if (action == "gmsg") {
+    //sendGroup(msg, sender, server);
+    sendGroup(msg, sender, server);
+  }/*
+  else if (action == "gmsg") {
+    sendGroup(msg, sender, server);
+  }*/
    else {
     cerr << "Action not supported/implemented for " << action << endl;
     message reply;
