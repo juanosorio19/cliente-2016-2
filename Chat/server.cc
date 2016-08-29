@@ -23,7 +23,7 @@ public:
       : name(name),
         password(pwd),
         netId(id),
-        
+
         connected(false) {}
 
   bool isPassword(const string &pwd) const { return password == pwd; }
@@ -57,9 +57,9 @@ public:
     }
   }
 
-  bool isConnected(const string &name) { 
-    bool ok = users[name].logged(); 
-    return ok; 
+  bool isConnected(const string &name) {
+    bool ok = users[name].logged();
+    return ok;
   }
 
   bool login(const string &name, const string &pwd, const string &id) {
@@ -81,7 +81,6 @@ public:
 
   void sendGroup(const string &dest, const string &text) {
     //message m;
-    cout<< "Hola estoy antes de entrar al for";
     for (int i = 0; i < groups[dest].size(); ++i)
     {
 
@@ -91,111 +90,121 @@ public:
 
       //m << groups[dest][i].identity() << text;
       //send(m);
-      
+
     }
-    
+
   }
 
   void registerGroup(const string &group,const string &sender, const string &name) {
-
     groups[group].push_back(name);
-    
   }
 };
 
 void login(message &msg, const string &sender, ServerState &server) {
-  string userName;
-  msg >> userName;
-  string password;
-  msg >> password;
-  if (server.login(userName, password, sender)) {
-    cout << "User " << userName << " joins the chat server" << endl;
-  } else {
-    cerr << "Wrong user/password " << endl;
+  if (msg.remaining() == 2) {
+    string userName;
+    msg >> userName;
+    string password;
+    msg >> password;
+    if (server.login(userName, password, sender)) {
+      cout << "User " << userName << " joins the chat server" << endl;
+    } else {
+      cerr << "Wrong user/password " << endl;
+    }
   }
 }
 
 void newUser(message &msg, const string &sender, ServerState &server) {
-  string userName;
-  msg >> userName;
-  string password;
-  msg >> password;
-  if (server.newUser(userName, password, sender)) {
-    cout << "User " << userName << " registered succesfully :D" << endl;
-  } else {
-    cerr << "User is already registered D:" << endl;
+  if (msg.remaining() == 2) {
+    string userName;
+    msg >> userName;
+    string password;
+    msg >> password;
+    if (server.newUser(userName, password, sender)) {
+      cout << "User " << userName << " registered succesfully :D" << endl;
+    } else {
+      cerr << "User is already registered D:" << endl;
+    }
+  }
+  else {
+    cerr << "Malo"; //TODO enviar mensaje al usuario ..
   }
 }
 
 void sendMessage(message &msg, const string &sender, ServerState &server) {
-  string dest;
-  msg >> dest;
+  if (msg.remaining() == 2) {
+    string dest;
+    msg >> dest;
 
-  string text;
-  msg >> text;
-  server.sendMessage(dest, text);
+    string text;
+    msg >> text;
+    server.sendMessage(dest, text);
+  }
 }
 
 void sendGroup(message &msg, const string &sender, ServerState &server) {
-  string group;
-  msg >> group;
+  if (msg.remaining() == 2) {
+    string group;
+    msg >> group;
 
-  string text;
-  msg >> text;
+    string text;
+    msg >> text;
 
-  cout<< "Hola estoy antes de entrar al metodo";
-  server.sendGroup(group, text);
+    server.sendGroup(group, text);
+  }
 }
 
 void registerGroup(message &msg, const string &sender, ServerState &server) {
-  
-  string group;
-  msg >> group;
+  if (msg.remaining() == 2) {
+    string group;
+    msg >> group;
+    //TODO obtner el id automáticamente
+    string userName;
+    msg>> userName;
 
-  string userName;
-  msg>> userName;
-  
-  if (server.isConnected(userName)) {// si el usuario esta logueado
+    if (server.isConnected(userName)) {// si el usuario esta logueado
 
-    server.registerGroup(group,sender,userName);
-    //cout << "User " << userName << " joins the chat server" << endl; // entonces llamemos al metodo register group
+      server.registerGroup(group,sender,userName);
+      //cout << "User " << userName << " joins the chat server" << endl; // entonces llamemos al metodo register group
 
 
 
-  } else {
-    cerr << "Wrong user/password " << endl; // si no, pues entonces no juju.
+    } else {
+      cerr << "Wrong user/password " << endl; // si no, pues entonces no juju.
+    }
   }
 }
 
 void dispatch(message &msg, ServerState &server) {
-  assert(msg.parts() > 2);
-  string sender;
-  msg >> sender;
+  if (msg.parts() > 2) {
+    string sender;
+    msg >> sender;
 
-  string action;
-  msg >> action;
+    string action;
+    msg >> action;
 
-  cout << "Action: " << action << endl;
-  if (action == "login") {
-    login(msg, sender, server);
-  } else if (action == "msg") {
-    sendMessage(msg, sender, server);
-  } else if (action == "register") {
-    newUser(msg, sender, server);
-  } else if (action == "gregister") {
-    registerGroup(msg, sender, server);
-  } else if (action == "gmsg") {
-    //sendGroup(msg, sender, server);
-    sendGroup(msg, sender, server);
-  }/*
-  else if (action == "gmsg") {
-    sendGroup(msg, sender, server);
-  }*/
-   else {
-    cerr << "Action not supported/implemented for " << action << endl;
-    message reply;
-    reply << sender << "unsupported" << action;
-    server.send(reply);
+    cout << "Action: " << action << endl;
+    if (action == "login") {
+      login(msg, sender, server);
+    } else if (action == "msg") {
+      sendMessage(msg, sender, server);
+    } else if (action == "register") {
+      newUser(msg, sender, server);
+    } else if (action == "gregister") {
+      registerGroup(msg, sender, server);
+    } else if (action == "gmsg") {
+      //sendGroup(msg, sender, server);
+      sendGroup(msg, sender, server);
+    }
+     else {
+      cerr << "Action not supported/implemented for " << action << endl;
+      message reply;
+      reply << sender << "unsupported" << action;
+      server.send(reply);
+    }
+  }
+  else {
+    cerr << "Wrong arguments" << endl;
   }
 }
 
