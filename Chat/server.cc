@@ -131,13 +131,30 @@ void newUser(message &msg, const string &sender, ServerState &server) {
   }
 }
 
+string mensajesito(message &msg){
+  string text;
+  string aux;
+  for(int i=0; i<msg.parts()-2;++i){
+    msg>>aux;
+    text+=aux + " ";
+
+  }
+
+  return text;
+
+}
+
 void sendMessage(message &msg, const string &sender, ServerState &server) {
-  if (msg.remaining() == 2) {
+  if (msg.remaining() > 2) {
+
     string dest;
     msg >> dest;
 
-    string text;
-    msg >> text;
+    string text=mensajesito(msg);
+    //string text;
+    //msg >> text;
+
+
     server.sendMessage(dest, text);
   }
 }
