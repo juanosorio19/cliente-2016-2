@@ -17,8 +17,8 @@ vector<string> tokenize(string &input) {
   while (ss >> s)
     result.push_back(s);
   return result;
-}
-
+}  
+//assertions
 int main(int argc, char const *argv[]) {
   if (argc != 2) {
     cerr << "Invalid arguments" << endl;

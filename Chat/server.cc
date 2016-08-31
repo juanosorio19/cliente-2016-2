@@ -25,7 +25,7 @@ public:
         netId(id),
 
         connected(false) {}
-
+  
   bool isPassword(const string &pwd) const { return password == pwd; }
 
   bool logged( ) const { return connected; }
@@ -130,11 +130,11 @@ void newUser(message &msg, const string &sender, ServerState &server) {
     cerr << "Malo"; //TODO enviar mensaje al usuario ..
   }
 }
-
-string mensajesito(message &msg){
+// converts message parts to a single string
+string concatMessage(message &msg){
   string text;
   string aux;
-  for(int i=0; i<msg.parts()-2;++i){
+  for(int i=1; i<msg.parts()-2;++i){
     msg>>aux;
     text+=aux + " ";
 
@@ -145,16 +145,11 @@ string mensajesito(message &msg){
 }
 
 void sendMessage(message &msg, const string &sender, ServerState &server) {
-  if (msg.remaining() > 2) {
+  if (msg.remaining() > 1) {
 
     string dest;
     msg >> dest;
-
-    string text=mensajesito(msg);
-    //string text;
-    //msg >> text;
-
-
+    string text=concatMessage(msg);
     server.sendMessage(dest, text);
   }
 }
