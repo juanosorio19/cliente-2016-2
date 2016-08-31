@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <zmqpp/zmqpp.hpp>
+#include <SFML/Audio.hpp>
 
 using namespace std;
 using namespace zmqpp;
@@ -17,7 +18,7 @@ vector<string> tokenize(string &input) {
   while (ss >> s)
     result.push_back(s);
   return result;
-}  
+}
 //assertions
 int main(int argc, char const *argv[]) {
   if (argc != 2) {

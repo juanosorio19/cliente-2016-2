@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 #include <zmqpp/zmqpp.hpp>
+#include <SFML/Audio.hpp>
+#include <unistd.h>
 
 using namespace std;
 using namespace zmqpp;
@@ -25,7 +27,7 @@ public:
         netId(id),
 
         connected(false) {}
-  
+
   bool isPassword(const string &pwd) const { return password == pwd; }
 
   bool logged( ) const { return connected; }
