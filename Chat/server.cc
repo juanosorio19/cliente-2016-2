@@ -77,8 +77,15 @@ public:
   }
   void sendMessage(const string &dest, const string &text) {
     message m;
-    m << users[dest].identity() << text;
+    m << users[dest].identity()<<"text"<< text;
     send(m);
+  }
+
+  void sendVoice(const string &dest,  message &content) {
+    
+    content.push_front(users[dest].identity());
+    //m.push_back(content);
+    send(content);
   }
 
   void sendGroup(const string &dest, const string &text) {
@@ -148,12 +155,19 @@ string concatMessage(message &msg){
 
 void sendMessage(message &msg, const string &sender, ServerState &server) {
   if (msg.remaining() > 1) {
-
     string dest;
     msg >> dest;
     string text=concatMessage(msg);
+    //enviar al destino
     server.sendMessage(dest, text);
   }
+}
+
+void sendVoice(message &msg, const string &sender,ServerState &server){
+  string dest;
+  msg>> dest;
+  server.sendVoice(dest,msg);
+
 }
 
 void sendGroup(message &msg, const string &sender, ServerState &server) {
@@ -209,6 +223,8 @@ void dispatch(message &msg, ServerState &server) {
     } else if (action == "gmsg") {
       //sendGroup(msg, sender, server);
       sendGroup(msg, sender, server);
+    } else if (action == "voice") {
+      sendVoice(msg, sender, server);
     }
      else {
       cerr << "Action not supported/implemented for " << action << endl;

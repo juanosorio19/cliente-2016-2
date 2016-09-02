@@ -6,18 +6,13 @@
 #include <vector>
 #include <zmqpp/zmqpp.hpp>
 #include <SFML/Audio.hpp>
-#include <unistd.h>
+#include <bits/stdc++.h>
 
+using namespace sf;
 using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
-// gets the path of ogg file
-string getPath(string ext) {
-  char buff[256];
-  getcwd(buff, 256);
-  string cwd(buff);
-  return cwd + ext;
-}
+
 
 vector<string> tokenize(string &input) {
   stringstream ss(input);
@@ -28,19 +23,53 @@ vector<string> tokenize(string &input) {
   return result;
 }
 
-void send_voice(const SoundBuffer &buffer, vector<string> &tokens, socket &s, string userName){ // , Time &time1 ??
+void handleInputFromServer(message &msg){
+  string id;
+  msg>> id;
+  string type;
+  msg>> type;
+  cout<<"Hasta aqui llegue"<<endl;
+  if (type=="voice"){
+  // descomponer el mensaje y reproducir audio
+  }else{
+    
+    cout << "Socket> " << type << endl;
+
+  }
+  
+
+  // si es de otro tipo solamente muestremlo 
+
+}
+
+void sendVoice(const SoundBuffer &buffer, vector<string> &tokens, socket &s){ //, string userName , Time &time1 ??
 
     const Int16 *sample = buffer.getSamples();
     size_t count = buffer.getSampleCount();
     size_t rate = buffer.getSampleRate();
     size_t channelCount = buffer.getChannelCount();
     message m;
-    int tiempo = time1.asMilliseconds();
+    //int tiempo = time1.asMilliseconds();
     m << tokens[0] << tokens[1] << count << rate << channelCount;
     m.add_raw(sample, count * sizeof(sf::Int16));
-    m << tiempo << userName;
-    
+    //m << tiempo << userName;
+    //m<<userName;
     s.send(m);
+}
+
+SoundBuffer recordSound(){
+  SoundBufferRecorder recorder;
+  unsigned int sampleRate=44100;
+  // Audio capture is done in a separate thread, so we can block the main thread while it is capturing
+  recorder.start(sampleRate);
+  cout << "Recording... press enter to stop";
+  cin.ignore(10000, '\n');
+  recorder.stop();
+  // Get the buffer containing the captured data
+  const SoundBuffer& buffer = recorder.getBuffer();
+  // captured sound informations
+  
+  return buffer;
 }
 
 //assertions
@@ -69,7 +98,8 @@ int main(int argc, char const *argv[]) {
   poller poll;
   poll.add(s, poller::poll_in);
   poll.add(console, poller::poll_in);
-  sf::SoundBuffer buffer;
+  vector<string> tokens;
+  SoundBuffer buffer;
 
   while (true) {
     if (poll.poll()) { // There are events in at least one of the sockets
@@ -77,17 +107,21 @@ int main(int argc, char const *argv[]) {
         // Handle input in socket
         message m;
         s.receive(m);
-        string response;
-        m >> response;
-        cout << "Socket> " << response << endl;
+        handleInputFromServer(m);
+        
       }
       if (poll.has_input(console)) {
         // Handle input from console
         string input;
         getline(cin, input);
-        vector<string> tokens = tokenize(input);
+        tokens = tokenize(input);
         if(tokens[0]== "voice"){
-          
+
+          buffer=(recordSound());
+          cout<< "buffer es : "<<buffer.getSampleRate()<<endl;
+          cout<< "buffer es : "<<buffer.getChannelCount()<<endl;
+          sendVoice(buffer,tokens,s);
+
         } else{
 
           //sending text
