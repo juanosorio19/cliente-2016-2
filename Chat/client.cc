@@ -23,17 +23,48 @@ vector<string> tokenize(string &input) {
   return result;
 }
 
-void handleInputFromServer(message &msg){
+
+
+void handleInputFromServer(message &msg,SoundBuffer &buffer){
+  cout<<"remanenteenelcliente "<<msg.remaining()<<endl;
   string id;
   msg>> id;
-  string type;
-  msg>> type;
-  cout<<"Hasta aqui llegue"<<endl;
-  if (type=="voice"){
-  // descomponer el mensaje y reproducir audio
+  string action;
+  msg>> action;
+  //SoundBuffer receive_buffer;
+  if (action=="voice"){
+    string dest;
+    msg>> dest;
+    cout<<"me lo mando "<<dest;
+    size_t count;
+    msg >>count;
+    size_t rate;
+    msg >>rate;
+    size_t channelCount;
+    msg >>channelCount;
+    const Int16 *sample;
+    msg>>sample;
+    cout<<"remanenteenelcliente "<<msg.remaining()<<endl;
+    buffer.loadFromSamples(sample,count,channelCount,rate);
+
+      // Create a sound instance and play it
+    sf::Sound sound(buffer);
+    sound.play();
+
+    // Loop while the sound is playing
+    while (sound.getStatus() == sf::Sound::Playing) {
+      // Leave some CPU time for other processes
+      sf::sleep(sf::milliseconds(100));
+
+      // Display the playing position
+      cout << "\rPlaying... " << sound.getPlayingOffset().asSeconds() << " sec        ";
+      cout << flush;
+    }
+
+
   }else{
     
-    cout << "Socket> " << type << endl;
+    cout << "Socket> " << action << endl;
 
   }
   
@@ -100,6 +131,7 @@ int main(int argc, char const *argv[]) {
   poll.add(console, poller::poll_in);
   vector<string> tokens;
   SoundBuffer buffer;
+  SoundBuffer receive_buffer;
 
   while (true) {
     if (poll.poll()) { // There are events in at least one of the sockets
@@ -107,7 +139,7 @@ int main(int argc, char const *argv[]) {
         // Handle input in socket
         message m;
         s.receive(m);
-        handleInputFromServer(m);
+        handleInputFromServer(m,receive_buffer);
         
       }
       if (poll.has_input(console)) {

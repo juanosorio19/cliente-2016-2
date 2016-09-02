@@ -82,9 +82,8 @@ public:
   }
 
   void sendVoice(const string &dest,  message &content) {
-    
+    cout<<"remanente es "<<content.remaining()<<endl;
     content.push_front(users[dest].identity());
-    //m.push_back(content);
     send(content);
   }
 
@@ -166,6 +165,7 @@ void sendMessage(message &msg, const string &sender, ServerState &server) {
 void sendVoice(message &msg, const string &sender,ServerState &server){
   string dest;
   msg>> dest;
+
   server.sendVoice(dest,msg);
 
 }
