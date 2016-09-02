@@ -23,7 +23,35 @@ vector<string> tokenize(string &input) {
   return result;
 }
 
+void playSound(message &msg,SoundBuffer &buffer){
+  size_t count;
+  msg >>count;
+  size_t rate;
+  msg >>rate;
+  size_t channelCount;
+  msg >>channelCount;
+  const Int16 *sample;
+  msg>>sample;
+  buffer.loadFromSamples(sample,count,channelCount,rate);
 
+    // Create a sound instance and play it
+  sf::Sound sound(buffer);
+  sound.play();
+
+  // Loop while the sound is playing
+  while (sound.getStatus() == sf::Sound::Playing) {
+    // Leave some CPU time for other processes
+    sf::sleep(sf::milliseconds(100));
+
+    // Display the playing position
+    cout << "\rPlaying... " << sound.getPlayingOffset().asSeconds() << " sec        ";
+    cout << flush;
+  }
+  cout<<"termine de reproducir"<<endl;
+
+    
+
+}
 
 void handleInputFromServer(message &msg,SoundBuffer &buffer){
   cout<<"remanenteenelcliente "<<msg.remaining()<<endl;
@@ -34,34 +62,9 @@ void handleInputFromServer(message &msg,SoundBuffer &buffer){
   //SoundBuffer receive_buffer;
   if (action=="voice"){
     string dest;
-    msg>> dest;
-    cout<<"me lo mando "<<dest;
-    size_t count;
-    msg >>count;
-    size_t rate;
-    msg >>rate;
-    size_t channelCount;
-    msg >>channelCount;
-    const Int16 *sample;
-    msg>>sample;
-    cout<<"remanenteenelcliente "<<msg.remaining()<<endl;
-    buffer.loadFromSamples(sample,count,channelCount,rate);
-
-      // Create a sound instance and play it
-    sf::Sound sound(buffer);
-    sound.play();
-
-    // Loop while the sound is playing
-    while (sound.getStatus() == sf::Sound::Playing) {
-      // Leave some CPU time for other processes
-      sf::sleep(sf::milliseconds(100));
-
-      // Display the playing position
-      cout << "\rPlaying... " << sound.getPlayingOffset().asSeconds() << " sec        ";
-      cout << flush;
-    }
-
-
+    msg>> dest; // sacamos la posicion del mensaje que no nos sirve
+    playSound(msg,buffer);
+    
   }else{
     
     cout << "Socket> " << action << endl;
