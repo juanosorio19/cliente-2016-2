@@ -53,29 +53,6 @@ void playSound(message &msg,SoundBuffer &buffer){
 
 }
 
-void handleInputFromServer(message &msg,SoundBuffer &buffer){
-  cout<<"remanenteenelcliente "<<msg.remaining()<<endl;
-  string id;
-  msg>> id;
-  string action;
-  msg>> action;
-  //SoundBuffer receive_buffer;
-  if (action=="voice"){
-    string dest;
-    msg>> dest; // sacamos la posicion del mensaje que no nos sirve
-    playSound(msg,buffer);
-    
-  }else{
-    
-    cout << "Socket> " << action << endl;
-
-  }
-  
-
-  // si es de otro tipo solamente muestremlo 
-
-}
-
 void sendVoice(const SoundBuffer &buffer, vector<string> &tokens, socket &s){ //, string userName , Time &time1 ??
 
     const Int16 *sample = buffer.getSamples();
@@ -91,13 +68,19 @@ void sendVoice(const SoundBuffer &buffer, vector<string> &tokens, socket &s){ //
     s.send(m);
 }
 
-SoundBuffer recordSound(){
-  SoundBufferRecorder recorder;
+SoundBuffer recordSound(SoundBufferRecorder &recorder, bool isCall=false){
+  //SoundBufferRecorder recorder;
   unsigned int sampleRate=44100;
   // Audio capture is done in a separate thread, so we can block the main thread while it is capturing
   recorder.start(sampleRate);
-  cout << "Recording... press enter to stop";
-  cin.ignore(10000, '\n');
+  if(!isCall){
+    cout << "Recording... press enter to stop";
+    cin.ignore(10000, '\n');
+
+  }else{
+   // time.sleep(1000);
+    sleep(milliseconds(1000));
+  }
   recorder.stop();
   // Get the buffer containing the captured data
   const SoundBuffer& buffer = recorder.getBuffer();
@@ -106,7 +89,73 @@ SoundBuffer recordSound(){
   return buffer;
 }
 
-//assertions
+void voiceCall(message &msg,SoundBuffer &buffer,bool &callState,SoundBufferRecorder &recorder,
+  vector<string> &tokens,socket &s){ 
+  if (!sf::SoundBufferRecorder::isAvailable()) {
+    cout << "No mic interface avaiable " << endl;
+  }
+  while (callState) {
+   /* vector<string> v;
+    v.push_back("voicec");
+    v.push_back(name_sender);
+    */
+    buffer=recordSound(recorder,callState);
+    // tokens.push_front("voice");
+    const SoundBuffer &buffer = recorder.getBuffer();
+    //send_voice(buffer, v, s, userName, tiempo);
+    sendVoice(buffer,tokens,s);
+  }
+  cout << "Call has ended" << endl;
+}
+
+void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thread *listening,
+  SoundBufferRecorder &recorder,vector<string> &tokens,socket &s){
+  cout<<"remanenteenelcliente "<<msg.remaining()<<endl; //debuggear
+  string id;
+  msg>> id;
+  string action;
+  msg>> action;
+  //SoundBuffer receive_buffer;
+  if (action=="voice"){
+    string dest;
+    msg>> dest; // sacamos la posicion del mensaje que no nos sirve
+    playSound(msg,buffer);
+    
+  }else if(action=="call") {
+    callState=true;
+    listening =new thread(voiceCall,ref(msg),ref(buffer),ref(callState),ref(recorder),ref(tokens),ref(s));
+
+
+  }else{
+    
+    cout << "Socket> " << action << endl;
+
+  }
+  
+
+  // si es de otro tipo solamente muestremlo 
+
+}
+
+void handleInputFromConsole(SoundBuffer &buffer,SoundBufferRecorder &recorder,vector<string> &tokens,socket &s){
+  if(tokens[0]== "voice"){
+    buffer=(recordSound(recorder));
+    cout<< "buffer es : "<<buffer.getSampleRate()<<endl;
+    cout<< "buffer es : "<<buffer.getChannelCount()<<endl;
+    sendVoice(buffer,tokens,s);
+  } else if (tokens[0]=="call"){
+    // do some call actions
+    cout<<"voy a hacer una llamada \n";
+  } else{
+    //sending text
+    message m;
+    for (const string &str : tokens)
+      m << str;
+      s.send(m);
+  }
+
+}
+
 int main(int argc, char const *argv[]) {
   if (argc != 2) {
     cerr << "Invalid arguments" << endl;
@@ -135,6 +184,10 @@ int main(int argc, char const *argv[]) {
   vector<string> tokens;
   SoundBuffer buffer;
   SoundBuffer receive_buffer;
+  SoundBufferRecorder recorder;
+  thread *listening;
+  //thread *speaking;
+  bool callState=false;
 
   while (true) {
     if (poll.poll()) { // There are events in at least one of the sockets
@@ -142,32 +195,27 @@ int main(int argc, char const *argv[]) {
         // Handle input in socket
         message m;
         s.receive(m);
-        handleInputFromServer(m,receive_buffer);
+        //listening = new thread (receiver,ref(m),ref(receive_buffer));
+        handleInputFromServer(m,receive_buffer,callState,listening,recorder,tokens,s);
+        
+        
+        //message m;
+        //s.receive(m);
+       // handleInputFromServer(m,receive_buffer);
         
       }
       if (poll.has_input(console)) {
+        //thread speaking ();
         // Handle input from console
         string input;
         getline(cin, input);
         tokens = tokenize(input);
-        if(tokens[0]== "voice"){
-
-          buffer=(recordSound());
-          cout<< "buffer es : "<<buffer.getSampleRate()<<endl;
-          cout<< "buffer es : "<<buffer.getChannelCount()<<endl;
-          sendVoice(buffer,tokens,s);
-
-        } else{
-
-          //sending text
-          message m;
-          for (const string &str : tokens)
-            m << str;
-          s.send(m);
-        }
+        handleInputFromConsole(buffer,recorder,tokens,s);
+        
 
       }
     }
   }
+  listening->join();
   return EXIT_SUCCESS;
 }
