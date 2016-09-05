@@ -114,7 +114,7 @@ void voiceCall(SoundBuffer &buffer,bool &callState,SoundBufferRecorder &recorder
   }
   cout << "Call has ended" << endl;
 }
-//message &msg,
+
 void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thread *listening,
   SoundBufferRecorder &recorder,vector<string> &tokens,socket &s){
   cout<<"remanenteenelcliente "<<msg.remaining()<<endl; //debuggear
