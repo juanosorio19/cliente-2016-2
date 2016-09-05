@@ -155,7 +155,7 @@ string concatMessage(message &msg){
 
 void sendMessage(message &msg, const string &sender, ServerState &server) {
   if (msg.remaining() > 1) {
-    cout<<"remanente de la llamada "<<msg.remaining()<<"\n";
+    
     string dest;
     msg >> dest;
     string text=concatMessage(msg);

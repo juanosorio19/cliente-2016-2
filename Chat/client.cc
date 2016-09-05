@@ -122,6 +122,7 @@ void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thre
   msg>> id;
   string action;
   msg>> action;
+  cout<<"accion es "<<action<<endl;
   //SoundBuffer receive_buffer;
   if (action=="voice" and callState != true){
     string dest;
@@ -144,8 +145,8 @@ void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thre
   }else if (action == "end") {
     callState = false;
 
-  }else if (action== "msg" or action== "gmsg" or action== "register" or action== "login" ){
-    
+  }else {
+    cout<<"entre aqui\n";
     cout << "Socket> " << action << endl;
 
   }
