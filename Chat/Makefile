@@ -10,10 +10,8 @@ all: client server
 
 client: client.cc
 	
-	$(CC) -o client client.cc -lzmq -lzmqpp -lsfml-system -lsfml-audio
+	$(CC) -o client client.cc -lzmq -lzmqpp -lsfml-system -lsfml-audio -pthread
 
 server: server.cc
 	
-	$(CC) -o server server.cc -lzmq -lzmqpp -lsfml-system -lsfml-audio
-
-
+	$(CC) -o server server.cc -lzmq -lzmqpp -lsfml-system -lsfml-audio -pthread

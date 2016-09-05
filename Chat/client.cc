@@ -24,6 +24,8 @@ vector<string> tokenize(string &input) {
 }
 
 void playSound(message &msg,SoundBuffer &buffer){
+  cout<<"acabo de entrar"<<"\n";
+cout<<"me quedan "<<msg.remaining()<<"partes \n";
   size_t count;
   msg >>count;
   size_t rate;
@@ -32,8 +34,10 @@ void playSound(message &msg,SoundBuffer &buffer){
   msg >>channelCount;
   const Int16 *sample;
   msg>>sample;
-  buffer.loadFromSamples(sample,count,channelCount,rate);
+   cout<<"acabo de pasar"<<"\n";
 
+  buffer.loadFromSamples(sample,count,channelCount,rate);
+cout<<"he sido asignado"<<endl;
     // Create a sound instance and play it
   sf::Sound sound(buffer);
   sound.play();
@@ -62,6 +66,7 @@ void sendVoice(const SoundBuffer &buffer, vector<string> &tokens, socket &s){ //
     message m;
     //int tiempo = time1.asMilliseconds();
     m << tokens[0] << tokens[1] << count << rate << channelCount;
+    cout<<"envio : "<<tokens[0]<<tokens[1]<<"\n";
     m.add_raw(sample, count * sizeof(sf::Int16));
     //m << tiempo << userName;
     //m<<userName;
@@ -88,26 +93,28 @@ SoundBuffer recordSound(SoundBufferRecorder &recorder, bool isCall=false){
   
   return buffer;
 }
-
-void voiceCall(message &msg,SoundBuffer &buffer,bool &callState,SoundBufferRecorder &recorder,
+//message &msg,
+void voiceCall(SoundBuffer &buffer,bool &callState,SoundBufferRecorder &recorder,
   vector<string> &tokens,socket &s){ 
   if (!sf::SoundBufferRecorder::isAvailable()) {
     cout << "No mic interface avaiable " << endl;
   }
   while (callState) {
-   /* vector<string> v;
+    vector<string> v;
     v.push_back("voicec");
-    v.push_back(name_sender);
-    */
+    v.push_back(tokens[1]);
+  
+   // tokens.pop_back();
+   // tokens.push_back("voicec");
     buffer=recordSound(recorder,callState);
     // tokens.push_front("voice");
     const SoundBuffer &buffer = recorder.getBuffer();
     //send_voice(buffer, v, s, userName, tiempo);
-    sendVoice(buffer,tokens,s);
+    sendVoice(buffer,v,s);
   }
   cout << "Call has ended" << endl;
 }
-
+//message &msg,
 void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thread *listening,
   SoundBufferRecorder &recorder,vector<string> &tokens,socket &s){
   cout<<"remanenteenelcliente "<<msg.remaining()<<endl; //debuggear
@@ -116,17 +123,28 @@ void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thre
   string action;
   msg>> action;
   //SoundBuffer receive_buffer;
-  if (action=="voice"){
+  if (action=="voice" and callState != true){
     string dest;
     msg>> dest; // sacamos la posicion del mensaje que no nos sirve
     playSound(msg,buffer);
     
-  }else if(action=="call") {
-    callState=true;
-    listening =new thread(voiceCall,ref(msg),ref(buffer),ref(callState),ref(recorder),ref(tokens),ref(s));
+  }else if(action=="call" and callState != true) {
+    cout<<"me llego un call\n";
+    callState=true;//,ref(msg)
+
+    listening =new thread(voiceCall,ref(buffer),ref(callState),ref(recorder),ref(tokens),ref(s));
 
 
-  }else{
+  }else if (action == "voicec") {
+    cout<<"esta llegando un voicec \n";
+    string dest;
+    msg>> dest; // sacamos la posicion del mensaje que no nos sirve
+    playSound(msg,buffer);
+
+  }else if (action == "end") {
+    callState = false;
+
+  }else if (action== "msg" or action== "gmsg" or action== "register" or action== "login" ){
     
     cout << "Socket> " << action << endl;
 
@@ -137,7 +155,8 @@ void handleInputFromServer(message &msg,SoundBuffer &buffer,bool &callState,thre
 
 }
 
-void handleInputFromConsole(SoundBuffer &buffer,SoundBufferRecorder &recorder,vector<string> &tokens,socket &s){
+void handleInputFromConsole(SoundBuffer &buffer,SoundBufferRecorder &recorder,vector<string> &tokens,socket &s,
+  thread *speaking,bool &callState){
   if(tokens[0]== "voice"){
     buffer=(recordSound(recorder));
     cout<< "buffer es : "<<buffer.getSampleRate()<<endl;
@@ -145,8 +164,20 @@ void handleInputFromConsole(SoundBuffer &buffer,SoundBufferRecorder &recorder,ve
     sendVoice(buffer,tokens,s);
   } else if (tokens[0]=="call"){
     // do some call actions
+    message m;
+    
+    m << "call" << tokens[1];
+    s.send(m);
+    
     cout<<"voy a hacer una llamada \n";
-  } else{
+    sleep(milliseconds(1000));
+    callState=true;
+    speaking=new thread(voiceCall,ref(buffer),ref(callState),ref(recorder),ref(tokens),ref(s));
+
+  } else if (tokens[0]=="end"){
+    cout<<"finalice una llamada \n";
+
+  }else if(tokens[0]=="msg" or tokens[0]=="gmsg" or tokens[0]=="register" or tokens[0]=="login" ){
     //sending text
     message m;
     for (const string &str : tokens)
@@ -186,7 +217,7 @@ int main(int argc, char const *argv[]) {
   SoundBuffer receive_buffer;
   SoundBufferRecorder recorder;
   thread *listening;
-  //thread *speaking;
+  thread *speaking;
   bool callState=false;
 
   while (true) {
@@ -210,12 +241,13 @@ int main(int argc, char const *argv[]) {
         string input;
         getline(cin, input);
         tokens = tokenize(input);
-        handleInputFromConsole(buffer,recorder,tokens,s);
+        handleInputFromConsole(buffer,recorder,tokens,s,speaking,callState);
         
 
       }
     }
   }
   listening->join();
+  speaking->join();
   return EXIT_SUCCESS;
 }

@@ -155,15 +155,23 @@ string concatMessage(message &msg){
 
 void sendMessage(message &msg, const string &sender, ServerState &server) {
   if (msg.remaining() > 1) {
+    cout<<"remanente de la llamada "<<msg.remaining()<<"\n";
     string dest;
     msg >> dest;
     string text=concatMessage(msg);
     //enviar al destino
     server.sendMessage(dest, text);
+  }else{
+    cout<<"envie un call"<<endl;
+    string dest;
+    msg >> dest;
+    server.sendMessage(dest,"call");
   }
+
 }
 
 void sendVoice(message &msg, const string &sender,ServerState &server){
+  cout<<"remanente de la vo< "<<msg.remaining()<<"\n";
   string dest;
   msg>> dest;
 
@@ -226,7 +234,12 @@ void dispatch(message &msg, ServerState &server) {
       sendGroup(msg, sender, server);
     } else if (action == "voice") {
       sendVoice(msg, sender, server);
+    }else if (action == "voicec") {
+      sendVoice(msg, sender, server);
+    }else if (action == "call") {
+      sendMessage(msg, sender, server);
     }
+
      else {
       cerr << "Action not supported/implemented for " << action << endl;
       message reply;
