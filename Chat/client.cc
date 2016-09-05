@@ -84,7 +84,7 @@ SoundBuffer recordSound(SoundBufferRecorder &recorder, bool isCall=false){
 
   }else{
    // time.sleep(1000);
-    sleep(milliseconds(300));
+    sleep(milliseconds(1000));
   }
   recorder.stop();
   // Get the buffer containing the captured data
