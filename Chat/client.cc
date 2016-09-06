@@ -168,7 +168,7 @@ void handleInputFromConsole(SoundBuffer &buffer, SoundBufferRecorder &recorder,
     s.send(m);
 
     cout << "voy a hacer una llamada \n";
-    sleep(milliseconds(1000));
+    sleep(milliseconds(500));
     callState = true;
     speaking = new thread(voiceCall, ref(buffer), ref(callState), ref(recorder),
                           ref(tokens), ref(s));
@@ -177,7 +177,8 @@ void handleInputFromConsole(SoundBuffer &buffer, SoundBufferRecorder &recorder,
     cout << "finalice una llamada \n";
 
   } else if (tokens[0] == "msg" or tokens[0] == "gmsg" or
-             tokens[0] == "register" or tokens[0] == "login") {
+             tokens[0] == "register" or tokens[0] == "login" or
+             tokens[0] == "gregister") {
     // sending text
     message m;
     for (const string &str : tokens) m << str;
