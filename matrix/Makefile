@@ -2,10 +2,6 @@
 
 CC=g++ -std=c++11 
 
-
-
-
-
 all: matrix
 
 client: matrix.cc
