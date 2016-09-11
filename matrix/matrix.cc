@@ -1,7 +1,6 @@
-#include <iostream>
-
-#include <math.h>
 #include <bits/stdc++.h>
+#include <unistd.h>
+#include <thread>
 using namespace std;
 
 class Matrix
@@ -13,6 +12,16 @@ class Matrix
 		 int cols;
 	public:
 		Matrix(){};
+		//constructor that creates an empty matrix of m*n 
+		Matrix(const int &m,const int &n){
+			rows=m;
+			cols=n;
+			data.resize(rows+1);
+			for (int i = 1; i <= rows; i++){
+				data[i].resize(cols+1);
+			}
+
+		};
 		//Creates a matrix object given from a .txt file
 		Matrix(const string & file){
 			double iterator;           // file contains an undermined number of integer values
@@ -39,18 +48,20 @@ class Matrix
   				}
 
 		};
-		//constructor that creates an empty matrix of m*n 
-		Matrix(const int &m,const int &n){
-			rows=m;
-			cols=n;
-			data.resize(rows+1);
-			for (int i = 1; i <= rows; i++){
-				data[i].resize(cols+1);
+		const int &getCols()const{return cols;}
+		const int &getRows()const{return rows;}
+		const double &getData(int i,int j)const{return data[i][j];}
+		void setData(int i,int j,double number){
+			data[i][j]=number;
+		}
+		Matrix getCol(int col){
+			Matrix result(this->rows,1);
+			cout<<"numero de rows x cols"<<this->rows<<" x "<<1<<"\n";
+			for(int i=1;i<=this->rows;i++){
+				result.setData(i,1,(this->data[i][col]));
 			}
-
-		};
-		int getCols(){return cols;}
-		int getRows(){return rows;}
+			return result;
+		}
 		void printMatrix(){
 			for (int i = 1; i <= rows; i++){
   				for (int j = 1; j <= cols; j++){
@@ -61,37 +72,72 @@ class Matrix
   			cout<<endl;
 
 		}
+		// Simple and sequential mult matrix (no threads)
 		Matrix matrixMult(const Matrix & b){
-			//Assertion missed, a.cols and b.rows have to be equals 
+			//Assertion missed, this->cols and b.rows have to be equals 
 			Matrix result(this->rows,b.cols);
 
 			for(int i=1;i<=this->rows;i++){
 				for(int j=1;j<=b.cols;j++){
 					result.data[i][j]=0;
 					for(int k=1;k<=this->cols;k++){
-						result.data[i][j]=result.data[i][j]+ (this->	data[i][k]*b.data[k][j]);
+						result.data[i][j]=result.data[i][j]+ (this->data[i][k]*b.data[k][j]);
 					}
 
 				}
 			}
 			return result;
 		}
+		void mult(Matrix &b,Matrix &result){
+			//Assertion missed, this->cols and b.rows have to be equals 
+			
 
+			for(int i=1;i<=this->rows;i++){
+				for(int j=1;j<=b.cols;j++){
+					result.data[i][j]=0;
+					for(int k=1;k<=this->cols;k++){
+						result.data[i][j]=result.data[i][j]+ (this->data[i][k]*b.data[k][j]);
+					}
 
-		
+				}
+			}
+			
+		}
+
 	
 };
 
+Matrix threadMult(const Matrix &a,const Matrix &b){
+	//Assertion missed, this->cols and b.rows have to be equals
+	Matrix result(a.getRows(),b.getCols());
+	for(int i=1;i<=a.getRows();i++){
+		for(int j=1;j<=b.getCols();j++){
+			result.setData(i,j,0);//initialize the pos i,j in 0
+			//thread multi(a.mult());
+			for(int k=1;k<=a.getCols();k++){
+				result.setData(i,j,(result.getData(i,j)+(a.getData(i,k)*b.getData(k,j))));
+			}
+
+		}
+	}
+	return result;
+
+
+}
+
 int main(int argc, char const *argv[])
 {
-	vector< vector<double> > matrix1,matrix2,result;
-
 	Matrix A("1.txt");
 	A.printMatrix();
 	Matrix B("2.txt");
 	B.printMatrix();
-	Matrix C=A.matrixMult(B);
+	Matrix C=threadMult(A,B);
 	C.printMatrix();
+	//Get the number of CPUs in linux
+	int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+	cout<<"number is "<<numCPU<<endl;
+	Matrix D=C.getCol(3);
+	D.printMatrix();
 
 	return 0;
 }
