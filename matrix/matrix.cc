@@ -1,26 +1,60 @@
-#include <bits/stdc++.h>
+#include <iostream>
 
+#include <math.h>
+#include <bits/stdc++.h>
 using namespace std;
 
- void printMatrix(const vector< vector<double> > &matrix,int rows,int cols){
-
-  for (int i = 1; i <= rows; i++){
-  	for (int j = 1; j <= cols; j++){
-  		cout<< matrix[i][j]<<" ";
-  	}
-    cout<<endl;
-  }
- }
-
-void createMatrix (vector< vector<double> > &matrix, int rows, int cols)
+class Matrix
 {
-  matrix.resize(rows+1);
-  for (int i = 1; i <= rows; i++)
-  {
-    matrix[i].resize(cols+1);
-  }
-  
-}
+
+	private:
+		 vector< vector<double> > data;
+		 int rows;
+		 int cols;
+	public:
+		Matrix(){};
+		//Creates a empty matrix given from a .txt file
+		Matrix(const string & file){
+			double iterator;           // file contains an undermined number of integer values
+		    ifstream fin;     // declare stream variable name
+			fin.open(file.c_str(),ios::in);    // open file
+		   	fin >> iterator;  
+		    rows=iterator;      
+		    fin >> iterator; 
+		    cols=iterator;
+		    data.resize(rows+1);
+  			for (int i = 1; i <= rows; i++){
+  				data[i].resize(cols+1);
+  			}
+  			bool flag=true;
+  			while ( flag==true )      //if not at end of file, continue reading numbers
+  				{
+  					for(int m=1;m<=rows;++m){
+  						for(int n=1;n<=cols;n++){
+  							fin >> iterator;
+  							data[m][n]=iterator;
+  						}
+  					}
+  					flag=false;
+  				}
+
+		};
+		void printMatrix(){
+			for (int i = 1; i <= rows; i++){
+  				for (int j = 1; j <= cols; j++){
+  					cout<< data[i][j]<<" ";
+  				}
+    			cout<<endl;
+  			}
+  			cout<<endl;
+
+		}
+
+		
+	
+};
+
+
 
 vector< vector<double> > matrixMult(vector< vector<double> > &matrix1,vector< vector<double> > &matrix2,
  int rows1,int cols1,int rows2,int cols2){
@@ -43,26 +77,11 @@ vector< vector<double> > matrixMult(vector< vector<double> > &matrix1,vector< ve
 int main(int argc, char const *argv[])
 {
 	vector< vector<double> > matrix1,matrix2,result;
-	createMatrix(matrix1,2,2);
-	createMatrix(matrix2,2,2);
-	matrix1[1][1]=1;
-	matrix1[1][2]=2;
-	matrix1[2][1]=3;
-	matrix1[2][2]=4;
 
-	matrix2[1][1]=5;
-	matrix2[1][2]=6;
-	matrix2[2][1]=7;
-	matrix2[2][2]=8;
-	printMatrix(matrix1,2,2);
-	printMatrix(matrix2,2,2);
+	Matrix A("1.txt");
+	A.printMatrix();
+	Matrix B("2.txt");
+	B.printMatrix();
 
-	result=matrixMult(matrix1,matrix2,2,2,2,2);
-	printMatrix(result,2,2);
-
-
-
-
-	
 	return 0;
 }
