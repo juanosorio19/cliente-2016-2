@@ -138,13 +138,13 @@ Matrix threadMult(Matrix &a, Matrix &b){
 
 int main(int argc, char const *argv[])
 {
-	Matrix A("100.txt");
+	Matrix A("1.txt");
 	//A.printMatrix();
-	Matrix B("100.txt");
+	Matrix B("2.txt");
 	//B.printMatrix();
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	//Matrix C=threadMult(A,B);
-	A.matrixMult(B);
+	Matrix C=threadMult(A,B);
+	//A.matrixMult(B);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>( t2 - t1 ).count();
     //C.printMatrix();
