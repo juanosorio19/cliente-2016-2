@@ -1,7 +1,11 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <thread>
+#include <chrono>
+
 using namespace std;
+using namespace std::chrono;
+
 
 class Matrix
 {
@@ -112,13 +116,19 @@ void mult(Matrix &a,Matrix &b,Matrix &result,const int &index){
 Matrix threadMult(Matrix &a, Matrix &b){
 	//Assertion missed, this->cols and b.rows have to be equals
 	Matrix result(a.getRows(),b.getCols());
+	//vector<thread> threads;
+	//Get the number of CPUs in linux
+	int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+	//threads.resize(numCPU+1);
+	
 	
 	for(int j=1;j<=b.getCols();j++){
 		Matrix temporal=b.getCol(j);
 		mult(a,temporal,result,j); //making a* b.col(j)
-		cout<<"asi vamos \n";
-		result.printMatrix();
-
+		//threads[j]= thread (mult,ref(a),ref(temporal),ref(result),ref(j)); //making a* b.col(j)
+		//cout<<"asi vamos \n";
+		//result.printMatrix();
+		//threads[j].join();
 	}
 
 	return result;
@@ -128,14 +138,17 @@ Matrix threadMult(Matrix &a, Matrix &b){
 
 int main(int argc, char const *argv[])
 {
-	Matrix A("1.txt");
-	A.printMatrix();
-	Matrix B("2.txt");
-	B.printMatrix();
-	Matrix C=threadMult(A,B);
-	C.printMatrix();
-	//Get the number of CPUs in linux
-	int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-	cout<<"number is "<<numCPU<<endl;
+	Matrix A("100.txt");
+	//A.printMatrix();
+	Matrix B("100.txt");
+	//B.printMatrix();
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	//Matrix C=threadMult(A,B);
+	A.matrixMult(B);
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>( t2 - t1 ).count();
+    //C.printMatrix();
+    cout << "duration was : "<<duration<<endl;
+
 	return 0;
 }
