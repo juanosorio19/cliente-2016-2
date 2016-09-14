@@ -56,7 +56,7 @@ class Matrix
 		}
 		Matrix getCol(int col){
 			Matrix result(this->rows,1);
-			cout<<"numero de rows x cols"<<this->rows<<" x "<<1<<"\n";
+			
 			for(int i=1;i<=this->rows;i++){
 				result.setData(i,1,(this->data[i][col]));
 			}
@@ -110,15 +110,17 @@ class Matrix
 Matrix threadMult( Matrix &a, Matrix &b){
 	//Assertion missed, this->cols and b.rows have to be equals
 	Matrix result(a.getRows(),b.getCols());
-	for(int i=1;i<=a.getRows();i++){
+	//for(int i=1;i<=a.getRows();i++){
 		for(int j=1;j<=b.getCols();j++){
-			result.setData(i,j,0);//initialize the pos i,j in 0
+			//result.setData(i,j,0);//initialize the pos i,j in 0
 			Matrix temporal=b.getCol(j);
 			a.mult(temporal,result,j);
+			cout<<"asi vamos \n";
+			result.printMatrix();
 			
 
 		}
-	}
+//	}
 	return result;
 
 
