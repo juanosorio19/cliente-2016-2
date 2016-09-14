@@ -72,7 +72,7 @@ class Matrix
   			cout<<endl;
 
 		}
-		// Simple and sequential mult matrix (no threads)
+		// Simple and sequential multmatrix method
 		Matrix matrixMult(const Matrix & b){
 			//Assertion missed, this->cols and b.rows have to be equals 
 			Matrix result(this->rows,b.cols);
@@ -88,15 +88,20 @@ class Matrix
 			}
 			return result;
 		}
-		void mult(Matrix &b,Matrix &result,const int &index){
+
+
+	
+};
+// Matrix multiplication function
+void mult(Matrix &a,Matrix &b,Matrix &result,const int &index){
 			//Assertion missed, this->cols and b.rows have to be equals 
 			
-
-			for(int i=1;i<=this->rows;i++){
-				for(int j=1;j<=b.cols;j++){
-					result.data[i][index]=0;
-					for(int k=1;k<=this->cols;k++){
-						result.data[i][index]=result.data[i][index]+ (this->data[i][k]*b.data[k][j]);
+			for(int i=1;i<=a.getRows();i++){
+				for(int j=1;j<=b.getCols();j++){
+					result.setData(i,index,0);
+					for(int k=1;k<=a.getCols();k++){
+						//result.data[i][index]=result.data[i][index]+ (this->data[i][k]*b.data[k][j]);
+						result.setData(i,index,( result.getData(i,index)+ (a.getData(i,k) * b.getData(k,j)) ));
 					}
 
 				}
@@ -104,23 +109,18 @@ class Matrix
 			
 		}
 
-	
-};
-
-Matrix threadMult( Matrix &a, Matrix &b){
+Matrix threadMult(Matrix &a, Matrix &b){
 	//Assertion missed, this->cols and b.rows have to be equals
 	Matrix result(a.getRows(),b.getCols());
-	//for(int i=1;i<=a.getRows();i++){
-		for(int j=1;j<=b.getCols();j++){
-			//result.setData(i,j,0);//initialize the pos i,j in 0
-			Matrix temporal=b.getCol(j);
-			a.mult(temporal,result,j);
-			cout<<"asi vamos \n";
-			result.printMatrix();
-			
+	
+	for(int j=1;j<=b.getCols();j++){
+		Matrix temporal=b.getCol(j);
+		mult(a,temporal,result,j); //making a* b.col(j)
+		cout<<"asi vamos \n";
+		result.printMatrix();
 
-		}
-//	}
+	}
+
 	return result;
 
 
