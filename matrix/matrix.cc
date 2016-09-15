@@ -97,7 +97,7 @@ class Matrix
 	
 };
 // Matrix multiplication function
-void mult(Matrix &a,Matrix &b,Matrix &result,const int &index){
+void mult(Matrix &a,Matrix &b,Matrix &result,const int &index,vector<bool> &threadState,int count){
 			//Assertion missed, this->cols and b.rows have to be equals 
 			
 			for(int i=1;i<=a.getRows();i++){
@@ -110,26 +110,46 @@ void mult(Matrix &a,Matrix &b,Matrix &result,const int &index){
 
 				}
 			}
-			
+			threadState[count]=false;
 		}
 
 Matrix threadMult(Matrix &a, Matrix &b){
 	//Assertion missed, this->cols and b.rows have to be equals
 	Matrix result(a.getRows(),b.getCols());
-	//vector<thread> threads;
+	
 	//Get the number of CPUs in linux
 	int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-	//threads.resize(numCPU+1);
-	
-	
+	vector< future <void> > threads(numCPU-1);
+	vector< bool> threadState(numCPU-1,false);
+	int count=0;
+			
 	for(int j=1;j<=b.getCols();j++){
 		Matrix temporal=b.getCol(j);
-		mult(a,temporal,result,j); //making a* b.col(j)
+
+    	if (count >= numCPU-1) count = 0;
+    	if (!threadState[count]) {
+    	//	cout<<"estado valido numero :"<<count<<endl;
+      	threadState[count]=true;	
+      	threads[count] =async(launch::async, mult,ref(a),ref(temporal),ref(result),ref(j),ref(threadState),count);
+      	threads[count].get();
+      	count++;
+    	}
+    	
+  	
+    	//async(launch::async, mult,ref(a),ref(temporal),ref(result),ref(j));
+		//mult(a,temporal,result,j); //making a* b.col(j)
 		//threads[j]= thread (mult,ref(a),ref(temporal),ref(result),ref(j)); //making a* b.col(j)
 		//cout<<"asi vamos \n";
 		//result.printMatrix();
 		//threads[j].join();
 	}
+	cout<<"aqui estoy"<<endl;
+/*	for(int i=1;i<=numCPU;++i){
+		if (threads[count].wait_for(std::chrono::seconds(0))!= future_status::ready ) {
+			threads[i].wait(); 
+			cout<<"estado finalizado numero :"<<i<<endl;
+		}
+	}*/	
 
 	return result;
 
@@ -140,7 +160,7 @@ int main(int argc, char const *argv[])
 {
 	Matrix A("1.txt");
 	//A.printMatrix();
-	Matrix B("2.txt");
+	Matrix B("1.txt");
 	//B.printMatrix();
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	Matrix C=threadMult(A,B);
