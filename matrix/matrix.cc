@@ -111,7 +111,7 @@ void mult(Matrix &a,Matrix &b,Matrix &result,const int &index,vector<bool> &thre
 				}
 			}
 			threadState[count]=false;
-		}
+		}  
 
 Matrix threadMult(Matrix &a, Matrix &b){
 	//Assertion missed, this->cols and b.rows have to be equals
