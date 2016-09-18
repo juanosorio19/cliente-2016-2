@@ -84,7 +84,7 @@ public:
     cout << endl;
   }
 
-  Matrix semiring() {
+  Matrix semiring(const Matrix &A) {
     double minimum = 0;
     int r = getRows();
     int c = getCols();
@@ -92,12 +92,12 @@ public:
     Matrix result(r, c);
 
     for (int i = 1; i <= r; ++i)
-      for (int j = i; j <= c; ++j) {
+      for (int j = 1; j <= c; ++j) {
         minimum = numeric_limits<double>::max();
         for (int k = 1; k <= r; ++k)
-          minimum = min(minimum, (getData(i, k) + getData(k, j)));
+          minimum = min(minimum, (getData(i, k) + A.getData(k, j)));
         result.setData(i, j, minimum);
-        result.setData(j, i, minimum);
+        // result.setData(j, i, minimum);
       }
     return result;
   }
@@ -183,15 +183,26 @@ Matrix threadMult(Matrix &a, Matrix &b) {
   return result;
 }
 
-int main(int argc, char const *argv[]) {
-  Matrix A("graph.txt");
+Matrix traverseGraph(Matrix &A) {
   Matrix C;
-  C = A.semiring();
+  C = A;
+  int rows = A.getRows();
+  for (int i = 1; i <= rows; i++) {
+    C = C.semiring(A);
+  }
+  return C;
+}
+
+int main(int argc, char const *argv[]) {
+  Matrix A("1.txt");
+  Matrix C;
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  C = traverseGraph(A);
   C.printMatrix();
   // A.printMatrix();
   // Matrix B("1.txt");
   // B.printMatrix();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  // C = A.semiring();
   // Matrix C = threadMult(A, B);
   // A.matrixMult(B);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
