@@ -229,16 +229,22 @@ private:
       for (int j = 0; j < c; ++j) {
         minimum = numeric_limits<T>::max();
         for (int k = 0; k < r; ++k){
+          if (get(i, k) != numeric_limits<T>::max() && A.get(k,j) != numeric_limits<T>::max()) {
           minimum = min(minimum, (get(i, k) + A.get(k, j)));
           cout << "A[" << i << "][" << k << "] = "  << get(i, k) << endl;
           cout << "DEBUG: " << get(0,1) << endl;
           cout << "B[" << k << "][" << j << "] = "  << A.get(k,j) << endl;
           cout << "current: "  << get(i, k) + A.get(k, j) << endl;
+          }
         }
         result.set(i, j, minimum);
         cout << "pos " << i << " " << j << ": " << minimum << endl;
         // result.setData(j, i, minimum);
       }
+    result.set(0, 0, 1);
+    result.set(0, 1, 2);
+    result.set(0, 2, 3);
+    print(result);
     return result;
   }
 };
@@ -310,7 +316,7 @@ int main(int argc, char const *argv[]) {
   fillMatrix<int>(B, "graph.txt");
   SparseMatrix<int> C(A.getRows(), B.getCols());
   cout << "DEBUG: " << A.get(0,1) << endl;
-  C.semiring(B);
+  C = A.semiring(B);
   print(A);
   print(B);
   print(C);
