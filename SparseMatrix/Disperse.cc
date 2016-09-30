@@ -82,14 +82,14 @@ class thread_pool {
   join_threads *joiner;
   void worker_thread() {
     cout<<"XXXXXXXXXXXXXXXXXXXXX\n";
-    while (!done or !work_queue.empty()) {
+    while (!done && !work_queue.empty()) {
       std::function<void()> task;
       if (work_queue.try_pop(task)) {
         //cout<<"HAGAME UNA TAREA\n";
         task();
       } else {
-        if(work_queue.empty()==1) return;
-        //cerr<<"estoy en el else\n";
+        //if(work_queue.empty()==1) return;
+        cerr<<"estoy en el else\n";
         std::this_thread::yield();
 
         
