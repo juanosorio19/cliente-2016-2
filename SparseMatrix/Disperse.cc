@@ -28,7 +28,7 @@ public:
   explicit join_threads(std::vector<std::thread> &threads_)
       : threads(threads_) {}
   ~join_threads() {
-     std::cerr << "destructing joiner\n";
+     //std::cerr << "destructing joiner\n";
     for (unsigned long i = 0; i < threads.size(); ++i) {
       if (threads[i].joinable())
         threads[i].join();
@@ -96,6 +96,7 @@ class thread_pool {
       if (work_queue.try_pop(task)) {
         task();
       } else {
+        cout<<"ESTOY EN EL ELSE\n";
         std::this_thread::yield();
       }
     }
@@ -110,6 +111,7 @@ public:
         threads.push_back(std::thread(&thread_pool::worker_thread, this));
       }
     } catch (...) {
+      cout<<"ESTOY EN EL CATCH\n";
       done = true;
       throw;
     }
@@ -117,10 +119,10 @@ public:
   ~thread_pool() {
     joiner->~join_threads();
     done = true;
-     /*std::string s("Destructing pool ");
+     std::string s("Destructing pool ");
      s += std::to_string(work_queue.empty());
      s += '\n';
-     std::cerr << s;*/
+     std::cerr << s<<endl;
   }
   template <typename FunctionType> void submit(FunctionType f) {
     work_queue.push(std::function<void()>(f));
@@ -245,7 +247,62 @@ private:
   }
 
 
-};
+};/*
+
+template <typename T>
+SparseMatrix<T> multConcurrency(const SparseMatrix<T> &m1,
+                                const SparseMatrix<T> &m2) {
+
+  // Check
+  assert(m1.getNumCols() == m2.getNumRows());
+
+  thread_pool *pool = new thread_pool();
+  vector<SparseMatrix<T>> results(m1.getNumRows(), {1, m2.getNumCols()});
+  SparseMatrix<T> result(m1.getNumRows(), m2.getNumCols());
+
+  for (int i = 0; i < m1.getNumRows(); i++) {
+    auto func = [&m1, &m2, i, &results]() { multCol(m1, m2, i, results); };
+    pool->submit(func);
+  }
+
+  delete pool;
+
+  for (int i = 0; i < results.size(); i++) {
+    for (int j = 0; j < results[i].getNumCols(); j++) {
+      result.set(results[i].get(0, j), i, j);
+    }
+  }
+
+  return result;
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void sparseSum(SparseMatrix<int>& a, SparseMatrix<int>& b,SparseMatrix<int> &result){
   for(int i=0;i<a.getRows();i++){
@@ -304,8 +361,9 @@ void mult(const SparseMatrix<int>& a,const SparseMatrix<int>& b,SparseMatrix<int
 
   // Multiplica matriz a con la matriz b
   vector< SparseMatrix<int> > matrices(b.getCols(),SparseMatrix <int>(a.getRows(),b.getCols()));  
-  {
-    thread_pool pool;
+  
+    //thread_pool pool;
+    thread_pool *pool = new thread_pool();
     
     for(int j=0;j<b.getCols();j++){
       //cout<<"mando col "<<j<<endl;
@@ -318,13 +376,15 @@ void mult(const SparseMatrix<int>& a,const SparseMatrix<int>& b,SparseMatrix<int
       //concurrentMult(a,temporal,result,j,matrices);
       
       //cerr<<"MANDO TAREA "<<j<<endl;
-      pool.submit(w);
+      //pool.submit(w);
+      pool->submit(w);
 
     }
+    delete pool;
 
     
    
-  }
+  
   sparseSum(matrices,result);
 
   
