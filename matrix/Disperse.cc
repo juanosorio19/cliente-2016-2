@@ -144,6 +144,7 @@ class SparseMatrix {
     }
     return 0;  // element(r,c)=0
   }
+
   // retorna un vector columna (c)
   vector<T> getCol(int c) {
     vector<T> result(this->rows, 0);
@@ -299,17 +300,34 @@ void print(SparseMatrix<T> &mat) {
   }
 }
 
-template <typename T>
+/*template <typename T>
 void semiring(SparseMatrix<T> &A, SparseMatrix<T> &C) {
-  for (int i = 0; i < A.getCols(); A++) path(A, col, C);
+  for (int i = 0; i < A.getCols(); A++) path(A, 0, C);
+}*/
+
+template <typename T>
+void semiring(SparseMatrix<T> &A, SparseMatrix<T> &C, int col) {
+  int rows = A.getRows();
+  T minimum;
+  for (int i = 0; i < rows; i++) {
+    minimum = numeric_limits<T>::max();
+    for (int j = 0; j < rows; j++)
+      minimum = min(minimum, A.get(i, j) + A.get(col, j));
+    C.set(minimum, i, col);
+  }
+}
+
+template <typename T>
+void traverseGraph(SparseMatrix<T> &A, SparseMatrix<T> &C) {
+  int cols = A.getCols();
+  for (int i = 0; i < cols; i++) semiring(A, C, 0);
 }
 
 int main(int argc, char const *argv[]) {
   SparseMatrix<int> A;
   fillMatrix<int>(A, "graph.txt");
   SparseMatrix<int> C(A.getRows(), A.getCols());
-  cout << "DEBUG: " << A.get(0, 1) << endl;
-  semiring(A, C);
+  traverseGraph(A, C);
   // print(A);
   // print(B);
   // print(C);

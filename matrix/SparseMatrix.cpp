@@ -7,15 +7,16 @@
 
 using namespace std;
 
-template <typename T> class SparseMatrix {
-private:
+template <typename T>
+class SparseMatrix {
+ private:
   int rows;
   int cols;
   vector<T> vals;
   vector<int> colInd;
   vector<int> rowPtr;
 
-public:
+ public:
   SparseMatrix() {}
   SparseMatrix(int r, int c) : rows(r), cols(c), rowPtr(r + 1, -1) {}
 
@@ -26,13 +27,11 @@ public:
   T get(int r, int c) {
     int firstEl = rowPtr[r];
     int col = colInd[firstEl];
-    int diffCol = 0; // difference between the first element in the row and c
-    int diffVal = 0; // differences between the values in colInd
+    int diffCol = 0;  // difference between the first element in the row and c
+    int diffVal = 0;  // differences between the values in colInd
     int index = 0;
-    if (firstEl == -1)
-      return 0;
-    if (col > c)
-      return 0;
+    if (firstEl == -1) return 0;
+    if (col > c) return 0;
     if (col == c)
       return vals[firstEl];
     else {
@@ -48,10 +47,8 @@ public:
   void set(T val, int r, int c) {
     vals.push_back(val);
     colInd.push_back(c);
-    if (rowPtr[r] == -1)
-      rowPtr[r] = vals.size() - 1;
-    if (r == rows - 1 && c == cols - 1)
-      rowPtr[rowPtr.size() - 1] = vals.size();
+    if (rowPtr[r] == -1) rowPtr[r] = vals.size() - 1;
+    if (r == rows - 1 && c == cols - 1) rowPtr[rowPtr.size() - 1] = vals.size();
   }
 
   void rowMultMatrix(SparseMatrix<T> &b, SparseMatrix<T> &c, int indRow) {
@@ -90,7 +87,8 @@ public:
   }
 };
 
-template <typename T> void fillMatrix(SparseMatrix<T> &mat, string source) {
+template <typename T>
+void fillMatrix(SparseMatrix<T> &mat, string source) {
   int rows = 0;
   int cols = 0;
   T iterator;
