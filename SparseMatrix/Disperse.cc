@@ -11,6 +11,16 @@
 using namespace std;
 
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
+
 class join_threads {
   std::vector<std::thread> &threads;
 
@@ -18,7 +28,7 @@ public:
   explicit join_threads(std::vector<std::thread> &threads_)
       : threads(threads_) {}
   ~join_threads() {
-    // std::cerr << "destructing joiner\n";
+     std::cerr << "destructing joiner\n";
     for (unsigned long i = 0; i < threads.size(); ++i) {
       if (threads[i].joinable())
         threads[i].join();
@@ -81,19 +91,12 @@ class thread_pool {
   std::vector<std::thread> threads;
   join_threads *joiner;
   void worker_thread() {
-    cout<<"XXXXXXXXXXXXXXXXXXXXX\n";
     while (!done && !work_queue.empty()) {
       std::function<void()> task;
       if (work_queue.try_pop(task)) {
-        //cout<<"HAGAME UNA TAREA\n";
         task();
       } else {
-        //if(work_queue.empty()==1) return;
-        cerr<<"estoy en el else\n";
         std::this_thread::yield();
-
-        
-
       }
     }
   }
@@ -102,32 +105,26 @@ public:
   thread_pool() : done(false), joiner(new join_threads(threads)) {
     // joiner(new join_threads(threads));
     unsigned const thread_count = std::thread::hardware_concurrency();
-    //cout<<"COUNT = "<<thread_count<<endl;
     try {
       for (unsigned i = 0; i < thread_count; ++i) {
-        cout<<"COUNT = "<<thread_count<<endl;
         threads.push_back(std::thread(&thread_pool::worker_thread, this));
       }
     } catch (...) {
-      cout<<"TRUE ???\n";
       done = true;
       throw;
     }
   }
   ~thread_pool() {
-    //while (!work_queue.empty()and done==false)
-      //work_queue.try_pop();
     joiner->~join_threads();
     done = true;
-    std::string s("Destructing pool ");
+     /*std::string s("Destructing pool ");
      s += std::to_string(work_queue.empty());
      s += '\n';
-     std::cerr << s;
+     std::cerr << s;*/
   }
   template <typename FunctionType> void submit(FunctionType f) {
-
     work_queue.push(std::function<void()>(f));
-    //std::cerr << std::this_thread::get_id() << std::endl;
+       // std::cerr << std::this_thread::get_id() << std::endl;
   }
 };
 
@@ -189,8 +186,8 @@ private:
 
   void set(const T value,const int r,const int c){
     assert(r>=0 and r<rows and c>=0 and c<cols);
-    mutex mtx;
-    mtx.lock();
+    //mutex mtx;
+    //mtx.lock();
   
     int rn=rowPtr[r+1]-rowPtr[r]; // cuantos elementos hay en fila r
     int start=rowPtr[r];
@@ -224,7 +221,7 @@ private:
     for(int j=r+1;j<rowPtr.size();j++){ //redimensiono rowPtr desde r+1
           rowPtr[j]+=1;
     }
-    mtx.unlock();
+    //mtx.unlock();
 
   }
 // MULTIPLICACION DE MATRICES SECUENCIAL, PREGUNTA 1(2)
@@ -274,11 +271,12 @@ void sparseSum(const vector< SparseMatrix<int> > & matrices,SparseMatrix<int> &r
 
 }
 
-void concurrentMult(const SparseMatrix<int>& a,const vector<int>& b,SparseMatrix<int> &result,const int col,
+void concurrentMult(const SparseMatrix<int>& a,const vector<int> b,SparseMatrix<int> &result,const int col,
   vector< SparseMatrix<int> > & matrices) {
-  cout<<"entré con "<<col<<endl;
-  std::cerr << std::this_thread::get_id() << std::endl;
+  //cout<<"entré con "<<col<<endl;
+  //std::cerr << std::this_thread::get_id() << std::endl;
   // Multiplica matriz a *columna
+  
   for(int i=0;i<a.getRows();i++){
     for(int j=0;j<1 ;j++){
       int temporal=0;
@@ -287,11 +285,11 @@ void concurrentMult(const SparseMatrix<int>& a,const vector<int>& b,SparseMatrix
           temporal+=a.get(i,k)*b[k];
         }
       }
-      cout<<"escribo un "<<temporal<<" pos "<<i<<" "<<col<<endl;
-      //matrices[col].set(temporal,i,col);
+      //cout<<"escribo un "<<temporal<<" pos "<<i<<" "<<col<<endl;
+      matrices[col].set(temporal,i,col);
       
       //result.set(temporal,i,col);
-      cerr<<"Escribí\n";
+      //cerr<<"Escribí\n";
       //cout<<"AQUI ESTOY\n"; 
       //matrices[col].printVal();
       //cout<<"estoy en pos "<<i<<" "<<col<<endl;
@@ -305,26 +303,30 @@ void concurrentMult(const SparseMatrix<int>& a,const vector<int>& b,SparseMatrix
 void mult(const SparseMatrix<int>& a,const SparseMatrix<int>& b,SparseMatrix<int> &result) {
 
   // Multiplica matriz a con la matriz b
+  vector< SparseMatrix<int> > matrices(b.getCols(),SparseMatrix <int>(a.getRows(),b.getCols()));  
   {
     thread_pool pool;
-    vector< SparseMatrix<int> > matrices(b.getCols(),SparseMatrix <int>(a.getRows(),b.getCols()));
+    
     for(int j=0;j<b.getCols();j++){
       //cout<<"mando col "<<j<<endl;
       vector<int>temporal=a.getCol(j);
+      
+
       //for(int i=0;i<temporal.size();i++){cout<<temporal[i]<<" "<<endl;}
       //cout<<"pase la prueba\n";
-      auto w = [&a, &temporal, &result,j,&matrices]() { concurrentMult(a, temporal, result, j,matrices); };
+      auto w = [&a, temporal, &result,j,&matrices]() { concurrentMult(a, temporal, result, j,matrices); };
       //concurrentMult(a,temporal,result,j,matrices);
       
-      cerr<<"MANDO TAREA "<<j<<endl;
+      //cerr<<"MANDO TAREA "<<j<<endl;
       pool.submit(w);
 
     }
 
-    //sparseSum(matrices,result);
-
+    
    
   }
+  sparseSum(matrices,result);
+
   
    
 }
@@ -363,7 +365,8 @@ int main(int argc, char const *argv[]) {
 
 
   //sparseSum(a,a,c);
-  //c.printVal();
+  cout<<"RESULTADO\n";
+  c.printVal();
 
 
   return 0;
