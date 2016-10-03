@@ -338,20 +338,18 @@ void mult(const SparseMatrix<int> &a, const SparseMatrix<int> &b,
   sparseSum(matrices, result);
 }
 
+
 template <typename T>
-void semiring(SparseMatrix<T> &A, SparseMatrix<T> &C, int col) {
+void semiring(SparseMatrix<T> &A, SparseMatrix<T> &B, SparseMatrix<T> &C, int col) {
   int rows = A.getRows();
   T minimum;
   for (int i = 0; i < rows; i++) {
     minimum = numeric_limits<T>::max();
     for (int j = 0; j < rows; j++)
       if (A.get(i, j) != numeric_limits<T>::max() &&
-          A.get(col, j) != numeric_limits<T>::max()) {
-        cout << "min(" << minimum << ", " << A.get(i, j) + A.get(col, j)
-             << endl;
-        minimum = min(minimum, A.get(i, j) + A.get(col, j));
+          B.get(col, j) != numeric_limits<T>::max()) {
+          minimum = min(minimum, A.get(i, j) + B.get(col, j));
       }
-    cout << "C[" << i << "][" << col << "] = " << minimum << endl;
     C.set(minimum, i, col);
   }
 }
@@ -359,7 +357,18 @@ void semiring(SparseMatrix<T> &A, SparseMatrix<T> &C, int col) {
 template <typename T>
 void traverseGraph(SparseMatrix<T> &A, SparseMatrix<T> &C) {
   int cols = A.getCols();
-  for (int i = 0; i < cols; i++) semiring(A, C, i);
+  for (int j = 0; j < cols - 1; j++)
+    for (int i = 0; i < cols; i++){
+      if (j == 0)
+        auto w = [&A, &A, &C, j]() {
+            semiring(A, A, C, j);
+      };
+      else
+        auto w = [&A, &C, &C, j]() {
+            semiring(A, A, C, j);};
+      pool->submit(w);
+      }
+        delete pool;
 }
 
 template <typename T>
