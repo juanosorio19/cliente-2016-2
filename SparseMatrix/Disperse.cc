@@ -11,16 +11,6 @@
 using namespace std;
 
 
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <queue>
-#include <thread>
-#include <vector>
-
 class join_threads {
   std::vector<std::thread> &threads;
 
@@ -91,7 +81,7 @@ class thread_pool {
   std::vector<std::thread> threads;
   join_threads *joiner;
   void worker_thread() {
-    while (!done && !work_queue.empty()) {
+    while (!done or !work_queue.empty()) {
       std::function<void()> task;
       if (work_queue.try_pop(task)) {
         task();
@@ -117,8 +107,12 @@ public:
     }
   }
   ~thread_pool() {
-    joiner->~join_threads();
+    //joiner->~join_threads();
     done = true;
+    for (auto &thread : threads) {
+      if (thread.joinable())
+        thread.join();
+    }
      std::string s("Destructing pool ");
      s += std::to_string(work_queue.empty());
      s += '\n';
