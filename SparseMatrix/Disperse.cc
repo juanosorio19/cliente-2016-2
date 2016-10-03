@@ -345,7 +345,13 @@ void semiring(SparseMatrix<T> &A, SparseMatrix<T> &C, int col) {
   for (int i = 0; i < rows; i++) {
     minimum = numeric_limits<T>::max();
     for (int j = 0; j < rows; j++)
-      minimum = min(minimum, A.get(i, j) + A.get(col, j));
+      if (A.get(i, j) != numeric_limits<T>::max() &&
+          A.get(col, j) != numeric_limits<T>::max()) {
+        cout << "min(" << minimum << ", " << A.get(i, j) + A.get(col, j)
+             << endl;
+        minimum = min(minimum, A.get(i, j) + A.get(col, j));
+      }
+    cout << "C[" << i << "][" << col << "] = " << minimum << endl;
     C.set(minimum, i, col);
   }
 }
@@ -371,8 +377,19 @@ void fillMatrix(SparseMatrix<T> &mat, string source) {
   for (int i = 0; i < rows; i++)
     for (int j = 0; j < cols; j++) {
       fin >> iterator;
-      mat.set(iterator, i, j);
+      if (iterator != -1)
+        mat.set(iterator, i, j);
+      else
+        mat.set(numeric_limits<T>::max(), i, j);
     }
+}
+
+template <typename T>
+void print(SparseMatrix<T> &mat) {
+  for (int i = 0; i < mat.getRows(); i++) {
+    for (int j = 0; j < mat.getCols(); j++) cout << mat.get(i, j) << " ";
+    cout << endl;
+  }
 }
 
 int main(int argc, char const *argv[]) {
@@ -380,6 +397,7 @@ int main(int argc, char const *argv[]) {
   fillMatrix<int>(A, "graph.txt");
   SparseMatrix<int> C(A.getRows(), A.getCols());
   traverseGraph(A, C);
+  print(C);
   /*SparseMatrix<int> a(3,3);
 
 
