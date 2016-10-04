@@ -357,18 +357,20 @@ void semiring(SparseMatrix<T> &A, SparseMatrix<T> &B, SparseMatrix<T> &C, int co
 template <typename T>
 void traverseGraph(SparseMatrix<T> &A, SparseMatrix<T> &C) {
   int cols = A.getCols();
-  for (int j = 0; j < cols - 1; j++)
+  for (int j = 0; j < cols - 1; j++) {
+    thread_pool *pool = new thread_pool();
     for (int i = 0; i < cols; i++){
-      if (j == 0)
-        auto w = [&A, &A, &C, j]() {
-            semiring(A, A, C, j);
-      };
-      else
-        auto w = [&A, &C, &C, j]() {
-            semiring(A, A, C, j);};
-      pool->submit(w);
+      if (j == 0){
+        auto w = [&A, &C, i]() {semiring(A, A, C, i);};
+        pool->submit(w);
       }
-        delete pool;
+      else {
+        auto w = [&A, &C, i]() {semiring(A, C, C, i);};
+        pool->submit(w);
+      }
+    }
+    delete pool;
+  }
 }
 
 template <typename T>
