@@ -1,5 +1,10 @@
-#include <bits/stdc++.h>
 #include <atomic>
+#include <bits/stdc++.h>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_sparse.hpp>
 #include <chrono>
 #include <condition_variable>
 #include <fstream>
@@ -8,7 +13,6 @@
 #include <queue>
 #include <thread>
 #include <vector>
-#include <boost/numeric/ublas/matrix_sparse.hpp>
 
 using namespace std;
 using namespace std::chrono;
@@ -19,25 +23,25 @@ using SM = ublas::compressed_matrix<int>;
 class join_threads {
   std::vector<std::thread> &threads;
 
- public:
+public:
   explicit join_threads(std::vector<std::thread> &threads_)
       : threads(threads_) {}
   ~join_threads() {
     // std::cerr << "destructing joiner\n";
     for (unsigned long i = 0; i < threads.size(); ++i) {
-      if (threads[i].joinable()) threads[i].join();
+      if (threads[i].joinable())
+        threads[i].join();
     }
   }
 };
 
-template <typename T>
-class threadsafe_queue {
- private:
+template <typename T> class threadsafe_queue {
+private:
   mutable std::mutex mut;
   std::queue<T> data_queue;
   std::condition_variable data_cond;
 
- public:
+public:
   threadsafe_queue() {}
   void push(T data) {
     std::lock_guard<std::mutex> lk(mut);
@@ -60,14 +64,16 @@ class threadsafe_queue {
   }
   bool try_pop(T &value) {
     std::lock_guard<std::mutex> lk(mut);
-    if (data_queue.empty()) return false;
+    if (data_queue.empty())
+      return false;
     value = std::move(data_queue.front());
     data_queue.pop();
     return true;
   }
   std::shared_ptr<T> try_pop() {
     std::lock_guard<std::mutex> lk(mut);
-    if (data_queue.empty()) return std::shared_ptr<T>();
+    if (data_queue.empty())
+      return std::shared_ptr<T>();
     std::shared_ptr<T> res(std::make_shared<T>(std::move(data_queue.front())));
     data_queue.pop();
     return res;
@@ -85,6 +91,7 @@ class thread_pool {
   join_threads *joiner;
   void worker_thread() {
     while (!done or !work_queue.empty()) {
+      // cout << "working" << endl;
       std::function<void()> task;
       if (work_queue.try_pop(task)) {
         task();
@@ -94,10 +101,10 @@ class thread_pool {
     }
   }
 
- public:
+public:
   thread_pool() : done(false), joiner(new join_threads(threads)) {
     // joiner(new join_threads(threads));
-    unsigned const thread_count = std::thread::hardware_concurrency();
+    unsigned const thread_count = 1; // std::thread::hardware_concurrency();
     try {
       for (unsigned i = 0; i < thread_count; ++i) {
         threads.push_back(std::thread(&thread_pool::worker_thread, this));
@@ -111,30 +118,29 @@ class thread_pool {
     // joiner->~join_threads();
     done = true;
     for (auto &thread : threads) {
-      if (thread.joinable()) thread.join();
+      if (thread.joinable())
+        thread.join();
     }
     /*std::string s("Destructing pool ");
     s += std::to_string(work_queue.empty());
     s += '\n';
     std::cerr << s << endl;*/
   }
-  template <typename FunctionType>
-  void submit(FunctionType f) {
+  template <typename FunctionType> void submit(FunctionType f) {
     work_queue.push(std::function<void()>(f));
     // std::cerr << std::this_thread::get_id() << std::endl;
   }
 };
 
-template <typename T>
-class SparseMatrix {
- private:
+template <typename T> class SparseMatrix {
+private:
   int rows;
   int cols;
   vector<T> val;
   vector<int> colInd;
   vector<int> rowPtr;
 
- public:
+public:
   SparseMatrix(int r, int c) : rows(r), cols(c), rowPtr(r + 1, 0) {}
   SparseMatrix(int r, int c, int nz) : rows(r), cols(c), rowPtr(r + 1, 0) {
     val.reserve(nz);
@@ -159,13 +165,13 @@ class SparseMatrix {
     // Retorna el elemento que hay en la posici ́on (r,c)
     // asercion= r,c menores o iguales que rows,cols
     int rowNumber =
-        rowPtr[r + 1] - rowPtr[r];  // se cuantos elementos hay en la fila r
-    int start = rowPtr[r];  // se cuantos elementos hay al empezar la fila r
+        rowPtr[r + 1] - rowPtr[r]; // se cuantos elementos hay en la fila r
+    int start = rowPtr[r]; // se cuantos elementos hay al empezar la fila r
     for (int i = 0; i < rowNumber; i++) {
       if (colInd[i + start] == c)
-        return val[i + start];  // tengo el elemento en la posicion r,c
+        return val[i + start]; // tengo el elemento en la posicion r,c
     }
-    return 0;  // element(r,c)=0
+    return 0; // element(r,c)=0
   }
   // retorna un vector columna (c)
   vector<T> getCol(int c) const {
@@ -183,16 +189,16 @@ class SparseMatrix {
     // mutex mtx;
     // mtx.lock();
 
-    int rn = rowPtr[r + 1] - rowPtr[r];  // cuantos elementos hay en fila r
+    int rn = rowPtr[r + 1] - rowPtr[r]; // cuantos elementos hay en fila r
     int start = rowPtr[r];
 
     if (get(r, c) != 0) {
       for (int i = 0; i < rn; i++) {
         if (colInd[i + start] == c)
-          val[i + start] = value;  // tengo el elemento en la posicion r,c
+          val[i + start] = value; // tengo el elemento en la posicion r,c
       }
       return;
-    } else if (rn == 0) {  // es el primer valor de la fila r
+    } else if (rn == 0) { // es el primer valor de la fila r
       val.emplace(val.begin() + start, value);
       colInd.emplace(colInd.begin() + start, c);
 
@@ -202,7 +208,7 @@ class SparseMatrix {
           val.emplace(val.begin() + start + i, value);
           colInd.emplace(colInd.begin() + start + i, c);
           for (int j = r + 1; j < rowPtr.size();
-               j++) {  // redimensiono rowPtr desde r+1
+               j++) { // redimensiono rowPtr desde r+1
             rowPtr[j] += 1;
           }
           return;
@@ -212,7 +218,7 @@ class SparseMatrix {
       colInd.emplace(colInd.begin() + start + rn, c);
     }
     for (int j = r + 1; j < rowPtr.size();
-         j++) {  // redimensiono rowPtr desde r+1
+         j++) { // redimensiono rowPtr desde r+1
       rowPtr[j] += 1;
     }
     // mtx.unlock();
@@ -290,61 +296,64 @@ void sparseSum(const vector<SparseMatrix<int>> &matrices,
   }
 }
 
-void concurrentMult(const SM &a,
-                     const int col,
-                    vector<SM> &matrices,
-                    const SM &c) {
-  // cout<<"entré con "<<col<<endl;
-  // std::cerr << std::this_thread::get_id() << std::endl;
-  // Multiplica matriz a *columna
+void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
+  // cerr << "entré con " << col << endl;
+  auto c = column(b, col);
 
-  for (int i = 0; i < a.size1(); i++) {
+  for (auto cit = c.begin(); cit != c.end(); ++cit) {
+    for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
+      for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
+        // cout << "(" << cit.index() << "," << *cit << ")" << endl;
 
-      int temporal = 0;
-      for (int k = 0; k < c.size2(); k++) {
-        if ((a(i, k) and c(k,col)) != 0) {
-          temporal += a(i, k) * c(k,col);
+        if (it2.index2() == cit.index()) {
+          cout << "multiplica!" << endl;
         }
       }
-      // cout<<"escribo un "<<temporal<<" pos "<<i<<" "<<col<<endl;
-      matrices[col](i,col) = temporal;
+      /*
+            int aij = *it2;
+            std::cout << "(" << it2.index1() << "," << it2.index2() << ") = " <<
+         *it2
+                      << endl;
 
-      // result.set(temporal,i,col);
-      // cerr<<"Escribí\n";
-      // cout<<"AQUI ESTOY\n";
-      // matrices[col].printVal();
-      // cout<<"estoy en pos "<<i<<" "<<col<<endl;
-
+            */
+    }
+    // cout << endl;
   }
-  // matrices[col].printVal();
+
+  /*
+    for (auto it1 = c.begin(); it1 != c.end(); ++it1) {
+      cout << " (" << *it1 << " : " << it1.index() << ")";
+    }
+    */
+  cout << endl;
 }
-void mult(const SM &a,
-          const SM &b,
-          SM &result) {
-  //result = ublas::prod(a,b);
+void mult(const SM &a, const SM &b, SM &result) {
+  // result = ublas::prod(a,b);
 
   // Multiplica matriz a con la matriz b
-  cout<<"ENTRE AL MULT\n";
-//vector<SM> matrices(a.size2(),SM(b.size1(),1));
-
+  cout << "ENTRE AL MULT\n";
+  // vector<SM> matrices(a.size2(), SM(b.size1(), 1));
+  concurrentMult(a, 0, result, b);
   // thread_pool pool;
-  // thread_pool *pool = new thread_pool();
-/*
+  /*
+  thread_pool *pool = new thread_pool();
+
   for (int j = 0; j < b.size2(); j++) {
-    auto w = [&a, j, &matrices, &b]() {
-      concurrentMult(a, j, matrices,b);
-    };
-    //pool->submit(w);
+    // cout << j << endl;
+    auto w = [&a, j, &result, &b]() { concurrentMult(a, j, result, b); };
+    pool->submit(w);
   }
+  cout << "Termina de encolar trabajos\n";
+
+  delete pool;
   */
-  //delete pool;
-  cout<<"AHORA HAGO LA SUMA\n";
-  //sparseSum(matrices, result);
+  cout << "AHORA HAGO LA SUMA\n";
+  // sparseSum(matrices, result);
 }
 
-
 template <typename T>
-void semiring(SparseMatrix<T> &A, SparseMatrix<T> &B, SparseMatrix<T> &C, int col) {
+void semiring(SparseMatrix<T> &A, SparseMatrix<T> &B, SparseMatrix<T> &C,
+              int col) {
   int rows = A.getRows();
   T minimum;
   for (int i = 0; i < rows; i++) {
@@ -352,7 +361,7 @@ void semiring(SparseMatrix<T> &A, SparseMatrix<T> &B, SparseMatrix<T> &C, int co
     for (int j = 0; j < rows; j++)
       if (A.get(i, j) != numeric_limits<T>::max() &&
           B.get(col, j) != numeric_limits<T>::max()) {
-          minimum = min(minimum, A.get(i, j) + B.get(col, j));
+        minimum = min(minimum, A.get(i, j) + B.get(col, j));
       }
     C.set(minimum, i, col);
   }
@@ -375,63 +384,60 @@ void traverseGraph(SparseMatrix<T> &A, SparseMatrix<T> &C) {
         delete pool;
 }*/
 
-
 void fillMatrix(ublas::compressed_matrix<int> &m, string source) {
 
   ifstream fin;
   std::string line;
 
   fin.open(source, ios::in);
-  while (std::getline(fin, line)){
+  while (std::getline(fin, line)) {
     std::stringstream stream(line);
 
     char info;
     stream >> info;
 
-    if(info != 'c') {
+    if (info != 'c') {
       size_t i, j, w;
       stream >> i >> j >> w;
-      m(i-1,j-1) = w;
+      m(i - 1, j - 1) = w;
     }
   }
 }
 
-
-template <typename T>
-void print(SparseMatrix<T> &mat) {
+template <typename T> void print(SparseMatrix<T> &mat) {
   for (int i = 0; i < mat.getRows(); i++) {
-    for (int j = 0; j < mat.getCols(); j++) cout << mat.get(i, j) << " ";
+    for (int j = 0; j < mat.getCols(); j++)
+      cout << mat.get(i, j) << " ";
     cout << endl;
   }
 }
 
 int main(int argc, char const *argv[]) {
-  cout<<"AQUI ESTOY\n";
-  ublas::compressed_matrix<int> m(264346,264346);
-
+  cout << "AQUI ESTOY\n";
+  ublas::compressed_matrix<int> m(264346, 264346);
   fillMatrix(m, "USA-road-d.NY.gr");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
- cout<<"EMPIEZA LA COSA\n";
- ublas::compressed_matrix<int> c(264346,264346);
-
- high_resolution_clock::time_point t1 = high_resolution_clock::now();
- mult(m,m,c);
- high_resolution_clock::time_point t2 = high_resolution_clock::now();
- auto duration = duration_cast<microseconds>(t2 - t1).count();
- cout << "duration was : " << duration << endl;
-
-  //fillMatrix<int>(A, "test.txt");
-  //                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            A.printVal();
-/*
-  SparseMatrix<int> c(264346,264346);
+  cout << "EMPIEZA LA COSA\n";
+  ublas::compressed_matrix<int> c(264346, 264346);
 
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  mult(A,A,c);
+  mult(m, m, c);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
-  c.printVal();
-*/
+
+  // fillMatrix<int>(A, "test.txt");
+  //                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            A.printVal();
+  /*
+    SparseMatrix<int> c(264346,264346);
+
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    mult(A,A,c);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    cout << "duration was : " << duration << endl;
+    c.printVal();
+  */
   return 0;
 }
