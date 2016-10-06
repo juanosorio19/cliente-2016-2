@@ -300,21 +300,23 @@ void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
   // cerr << "entré con " << col << endl;
   auto c = row(b, col);
 
-  for (auto cit = c.begin(); cit != c.end(); ++cit) {
+  for (auto cit =  c.begin(); cit != c.end(); ++cit) {
     for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
       int temporal =0;
       for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
         // cout << "(" << cit.index() << "," << *cit << ")" << endl;
-
+  //      for (auto cit = c.begin(); cit != c.end(); ++cit) {
         if (it2.index2() == cit.index()) {
-          cout << "multiplica!" << *cit<<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
-          " "<<it2.index2()<< endl;
+
           //temporal+= *it2 + *cit;
-          result(cit.index(),it2.index2())+= *it2 + *cit; ;
+          result(col,it2.index2())+= *it2 * c[it2.index1()];
+        //  int aa=[3];
+          cout << "multiplica!" <<c[it2.index1()] <<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
+          "                         "<<col<<" "<< it2.index2()<<"   "<<result(col,it2.index2())<< endl;
 
         }
       }
-      
+
       /*
             int aij = *it2;
             std::cout << "(" << it2.index1() << "," << it2.index2() << ") = " <<
@@ -339,9 +341,9 @@ void mult(const SM &a, const SM &b, SM &result) {
   // Multiplica matriz a con la matriz b
   cout << "ENTRE AL MULT\n";
   // vector<SM> matrices(a.size2(), SM(b.size1(), 1));
-  
+
   // thread_pool pool;
-  
+
   thread_pool *pool = new thread_pool();
 
   for (int j = 0; j < b.size2(); j++) {
@@ -353,7 +355,7 @@ void mult(const SM &a, const SM &b, SM &result) {
   cout << "Termina de encolar trabajos\n";
 
   delete pool;
-  
+
   cout << "AHORA HAGO LA SUMA\n";
   // sparseSum(matrices, result);
 }
