@@ -298,17 +298,23 @@ void sparseSum(const vector<SparseMatrix<int>> &matrices,
 
 void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
   // cerr << "entré con " << col << endl;
-  auto c = column(b, col);
+  auto c = row(b, col);
 
   for (auto cit = c.begin(); cit != c.end(); ++cit) {
     for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
+      int temporal =0;
       for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
         // cout << "(" << cit.index() << "," << *cit << ")" << endl;
 
         if (it2.index2() == cit.index()) {
-          cout << "multiplica!" << endl;
+          cout << "multiplica!" << *cit<<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
+          " "<<it2.index2()<< endl;
+          //temporal+= *it2 + *cit;
+          result(cit.index(),it2.index2())+= *it2 + *cit; ;
+
         }
       }
+      
       /*
             int aij = *it2;
             std::cout << "(" << it2.index1() << "," << it2.index2() << ") = " <<
@@ -333,20 +339,21 @@ void mult(const SM &a, const SM &b, SM &result) {
   // Multiplica matriz a con la matriz b
   cout << "ENTRE AL MULT\n";
   // vector<SM> matrices(a.size2(), SM(b.size1(), 1));
-  concurrentMult(a, 0, result, b);
+  
   // thread_pool pool;
-  /*
+  
   thread_pool *pool = new thread_pool();
 
   for (int j = 0; j < b.size2(); j++) {
+    concurrentMult(a, j, result, b);
     // cout << j << endl;
-    auto w = [&a, j, &result, &b]() { concurrentMult(a, j, result, b); };
-    pool->submit(w);
+    /*auto w = [&a, j, &result, &b]() { concurrentMult(a, j, result, b); };
+    pool->submit(w);*/
   }
   cout << "Termina de encolar trabajos\n";
 
   delete pool;
-  */
+  
   cout << "AHORA HAGO LA SUMA\n";
   // sparseSum(matrices, result);
 }
@@ -414,18 +421,27 @@ template <typename T> void print(SparseMatrix<T> &mat) {
 
 int main(int argc, char const *argv[]) {
   cout << "AQUI ESTOY\n";
-  ublas::compressed_matrix<int> m(264346, 264346);
-  fillMatrix(m, "USA-road-d.NY.gr");
+  //ublas::compressed_matrix<int> m(264346, 264346);
+  ublas::compressed_matrix<int> m(3, 3);
+  //fillMatrix(m, "USA-road-d.NY.gr");
+  fillMatrix(m, "test.txt");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
   cout << "EMPIEZA LA COSA\n";
-  ublas::compressed_matrix<int> c(264346, 264346);
+  ublas::compressed_matrix<int> c(3, 3);
+  //ublas::compressed_matrix<int> c(264346, 264346);
 
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   mult(m, m, c);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
+  for(int i=0;i<3;i++){
+    for(int j=0;j<3;j++){
+      cout<<c(i,j)<<" ";
+    }
+    cout<<endl;
+  }
 
   // fillMatrix<int>(A, "test.txt");
   //                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            A.printVal();
