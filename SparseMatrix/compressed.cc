@@ -104,7 +104,7 @@ class thread_pool {
 public:
   thread_pool() : done(false), joiner(new join_threads(threads)) {
     // joiner(new join_threads(threads));
-    unsigned const thread_count = 1; // std::thread::hardware_concurrency();
+    unsigned const thread_count =std::thread::hardware_concurrency();
     try {
       for (unsigned i = 0; i < thread_count; ++i) {
         threads.push_back(std::thread(&thread_pool::worker_thread, this));
@@ -296,26 +296,36 @@ void sparseSum(const vector<SparseMatrix<int>> &matrices,
   }
 }
 
-void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
+void concurrentMult(const SM &a, const int col, SM &result, const SM &b,mutex &mtx) {
+  
   // cerr << "entré con " << col << endl;
   auto c = row(b, col);
 
   for (auto cit =  c.begin(); cit != c.end(); ++cit) {
+    int temporal =0;
     for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
-      int temporal =0;
+      //int temporal =0;
+      //int pos = it1.end().index2();
       for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
         // cout << "(" << cit.index() << "," << *cit << ")" << endl;
   //      for (auto cit = c.begin(); cit != c.end(); ++cit) {
         if (it2.index2() == cit.index()) {
 
           //temporal+= *it2 + *cit;
-          result(col,it2.index2())+= *it2 * c[it2.index1()];
+          temporal+= *it2 * c[it2.index1()];
+          //mtx.lock();
+          //result(col,it2.index2())+= *it2 * c[it2.index1()];
+          //mtx.unlock();
         //  int aa=[3];
-          cout << "multiplica!" <<c[it2.index1()] <<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
+          /*cout << "multiplica!" <<c[it2.index1()] <<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
           "                         "<<col<<" "<< it2.index2()<<"   "<<result(col,it2.index2())<< endl;
+*/
 
         }
       }
+      
+
+
 
       /*
             int aij = *it2;
@@ -325,6 +335,10 @@ void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
 
             */
     }
+    //cout<<"ESCRIBIRIA UN "<<temporal<<" pos "<<col<<" "<<cit.index() <<endl;
+    mtx.lock();
+    result(col,cit.index())= temporal;
+    mtx.unlock();
     // cout << endl;
   }
 
@@ -333,7 +347,8 @@ void concurrentMult(const SM &a, const int col, SM &result, const SM &b) {
       cout << " (" << *it1 << " : " << it1.index() << ")";
     }
     */
-  cout << endl;
+  //cout << endl;
+  //cout<<"termino fila "<<col<<endl;
 }
 void mult(const SM &a, const SM &b, SM &result) {
   // result = ublas::prod(a,b);
@@ -345,14 +360,16 @@ void mult(const SM &a, const SM &b, SM &result) {
   // thread_pool pool;
 
   thread_pool *pool = new thread_pool();
+  mutex mtx;
 
-  for (int j = 0; j < b.size2(); j++) {
-    concurrentMult(a, j, result, b);
+  //for (int j = 0; j < b.size2(); j++) {
+  for (int j = 0; j <b.size2(); j++) {
+    //concurrentMult(a, j, result, b,mtx);
     // cout << j << endl;
-    /*auto w = [&a, j, &result, &b]() { concurrentMult(a, j, result, b); };
-    pool->submit(w);*/
+    auto w = [&a, j, &result, &b,&mtx]() { concurrentMult(a, j, result, b,mtx); };
+    pool->submit(w);
   }
-  cout << "Termina de encolar trabajos\n";
+  //cout << "Termina de encolar trabajos\n";
 
   delete pool;
 
@@ -423,27 +440,30 @@ template <typename T> void print(SparseMatrix<T> &mat) {
 
 int main(int argc, char const *argv[]) {
   cout << "AQUI ESTOY\n";
-  //ublas::compressed_matrix<int> m(264346, 264346);
-  ublas::compressed_matrix<int> m(3, 3);
-  //fillMatrix(m, "USA-road-d.NY.gr");
-  fillMatrix(m, "test.txt");
+  ublas::compressed_matrix<int> m(264346, 264346);
+  //ublas::compressed_matrix<int> m(3, 3);
+  fillMatrix(m, "USA-road-d.NY.gr");
+  //fillMatrix(m, "test.txt");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
   cout << "EMPIEZA LA COSA\n";
-  ublas::compressed_matrix<int> c(3, 3);
-  //ublas::compressed_matrix<int> c(264346, 264346);
+  //ublas::compressed_matrix<int> c(3, 3);
+  ublas::compressed_matrix<int> c(264346, 264346);
 
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   mult(m, m, c);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
+
+/*  
   for(int i=0;i<3;i++){
     for(int j=0;j<3;j++){
       cout<<c(i,j)<<" ";
     }
     cout<<endl;
   }
+*/
 
   // fillMatrix<int>(A, "test.txt");
   //                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            A.printVal();
