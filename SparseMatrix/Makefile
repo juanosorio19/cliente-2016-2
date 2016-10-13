@@ -10,5 +10,4 @@ all: compressed
 compressed: compressed.cc
 	$(CC) -o compressed compressed.cc -pthread
 
-clean:
-		rm compressed
+

@@ -19,6 +19,7 @@ using namespace std::chrono;
 namespace ublas = boost::numeric::ublas;
 
 using SM = ublas::compressed_matrix<int>;
+using MM = ublas::mapped_matrix<int>;
 
 class join_threads {
   std::vector<std::thread> &threads;
@@ -105,7 +106,6 @@ public:
   thread_pool() : done(false), joiner(new join_threads(threads)) {
     // joiner(new join_threads(threads));
     unsigned const thread_count =std::thread::hardware_concurrency();
-    cout << "threads in pool " << thread_count << endl;
     try {
       for (unsigned i = 0; i < thread_count; ++i) {
         threads.push_back(std::thread(&thread_pool::worker_thread, this));
@@ -134,34 +134,38 @@ public:
 };
 
 void concurrentMult(const SM &a, const int col, SM &result, const SM &b,mutex &mtx) {
-
-  auto c = row(b, col);
-
-  for (auto cit =  c.begin(); cit != c.end(); ++cit) {
-    int temporal =0;
+	int temporal=0;
     for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
       for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
-        if (it2.index2() == cit.index()) {
-          temporal+= *it2 * c[it2.index1()];
-          /*cout << "multiplica!" <<c[it2.index1()] <<" "<<*it2<<" pos "<<cit.index()<<" "<<it2.index1()<<
-          "                         "<<col<<" "<< it2.index2()<<"   "<<result(col,it2.index2())<< endl;*/
+      	auto r=row(a,it2.index2());
+      	std::vector< tuple<int,int,int> > nnz;
+      	for (auto cit =  r.begin(); cit != r.end(); ++cit) {
+      		std::tuple<int,int,int> temp(it2.index2(),cit.index(),*cit);
+      		nnz.push_back(temp);
+      	}
 
-        }
+         
+
+      	for(int i=0;i<nnz.size();i++){
+      		if(( it2.index2()==get<1>(nnz[i]) )||( get<2>(nnz[i])!=0 ) ){
+      			result(it2.index1(),get<1>(nnz[i]))+= *it2 * get<2>(nnz[i]);
+      			temporal+=1;
+      		}
+      	}
       }
     }
-
-    mtx.lock();
-    result(col,cit.index())= temporal;
-    mtx.unlock();
-  }
+    cout<<"                                      "<<temporal<<endl;
+    //mtx.lock();
+    //result(col,cit.index())= temporal;
+    //mtx.unlock();
+ // }
 }
 
 void mult(const SM &a, const SM &b, SM &result) {
-  cout << "ENTRE AL MULT\n";
   thread_pool *pool = new thread_pool();
   mutex mtx;
 
-  for (int j = 0; j < b.size2(); j++) {
+  for (int j =0; j <1; j++) {
     //concurrentMult(a, j, result, b,mtx);
     auto w = [&a, j, &result, &b,&mtx]() {
       concurrentMult(a, j, result, b,mtx);
@@ -176,11 +180,9 @@ void mult(const SM &a, const SM &b, SM &result) {
 
   delete pool;
 
-  cout << "AHORA HAGO LA SUMA\n";
-  // sparseSum(matrices, result);
 }
 
-void fillMatrix(ublas::compressed_matrix<int> &m, string source) {
+void fillMatrix(SM &m, string source) {
 
   ifstream fin;
   std::string line;
@@ -200,26 +202,25 @@ void fillMatrix(ublas::compressed_matrix<int> &m, string source) {
   }
 }
 
+
 int main(int argc, char const *argv[]) {
-  cout << "AQUI ESTOY\n";
   ublas::compressed_matrix<int> m(264346, 264346);
   //ublas::compressed_matrix<int> m(3, 3);
   fillMatrix(m, "USA-road-d.NY.gr");
   //fillMatrix(m, "test.txt");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
-  cout << "EMPIEZA LA COSA\n";
   //ublas::compressed_matrix<int> c(3, 3);
   ublas::compressed_matrix<int> c(264346, 264346);
-
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
   mult(m, m, c);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
 
-/*
-  for(int i=0;i<3;i++){
+
+ /* for(int i=0;i<3;i++){
     for(int j=0;j<3;j++){
       cout<<c(i,j)<<" ";
     }
