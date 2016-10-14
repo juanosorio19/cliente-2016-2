@@ -144,7 +144,7 @@ void concurrentMult(const SM &a, const int col, SM &result, const SM &b,mutex &m
       		nnz.push_back(temp);
       	}
 
-         
+
 
       	for(int i=0;i<nnz.size();i++){
       		if(( it2.index2()==get<1>(nnz[i]) )||( get<2>(nnz[i])!=0 ) ){
@@ -160,6 +160,8 @@ void concurrentMult(const SM &a, const int col, SM &result, const SM &b,mutex &m
     //mtx.unlock();
  // }
 }
+
+
 
 void mult(const SM &a, const SM &b, SM &result) {
   thread_pool *pool = new thread_pool();
@@ -180,6 +182,49 @@ void mult(const SM &a, const SM &b, SM &result) {
 
   delete pool;
 
+}
+
+void semiring(SM &a, SM &b, SM &result) {
+    for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
+      for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
+        auto r = row(a, it2.index2());
+        std::vector< tuple<int,int,int> > nnz;
+        for (auto cit =  r.begin(); cit != r.end(); ++cit) {
+      		std::tuple<int,int,int> temp(it2.index2(),cit.index(),*cit);
+      		nnz.push_back(temp);
+      	}
+        for(int i=0;i<nnz.size();i++){
+      		if(( it2.index2()==get<1>(nnz[i]) )||( get<2>(nnz[i])!=0 )  ){
+            if (result(it2.index1(), get<1>(nnz[i])) == 0 && it2.index1() != get<1>(nnz[i]))
+              result(it2.index1(), get<1>(nnz[i])) = *it2 + get<2>(nnz[i]);
+            else{
+              int temp=result(it2.index1(),get<1>(nnz[i]));
+              result(it2.index1(),get<1>(nnz[i])) = min(*it2 + get<2>(nnz[i]), temp);
+
+            }
+
+      			//result(it2.index1(),get<1>(nnz[i]))+= *it2 * get<2>(nnz[i]);
+      		}
+      	}
+      }
+    }
+}
+
+void traverseGraph(SM &a, SM &result) {
+  int iterations = a.size1() - 2;
+  if (iterations % 2 == 0)
+    //n/2
+    |
+
+
+
+  /*int times = a.size1() - 1;
+  for (int i = 2; i <= times; i++)
+    if (i == 2)
+      semiring(a, a, result);
+    else
+      semiring(a, result, result);
+  semiring(a, a, result);*/
 }
 
 void fillMatrix(SM &m, string source) {
@@ -205,16 +250,17 @@ void fillMatrix(SM &m, string source) {
 
 int main(int argc, char const *argv[]) {
   ublas::compressed_matrix<int> m(264346, 264346);
-  //ublas::compressed_matrix<int> m(3, 3);
+  //ublas::compressed_matrix<int> m(4, 4);
   fillMatrix(m, "USA-road-d.NY.gr");
-  //fillMatrix(m, "test.txt");
+  //fillMatrix(m, "graph.txt");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
-  //ublas::compressed_matrix<int> c(3, 3);
+  //ublas::compressed_matrix<int> c(4, 4);
   ublas::compressed_matrix<int> c(264346, 264346);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-  mult(m, m, c);
+  //mult(m, m, c);
+  semiring(m, m, c);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
