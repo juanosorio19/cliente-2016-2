@@ -184,7 +184,7 @@ void mult(const SM &a, const SM &b, SM &result) {
 
 }
 
-void semiring(SM &a, SM &b, SM &result) {
+void oneIt(SM &a, SM &b, SM &result) {
     for (auto it1 = a.begin1(); it1 != a.end1(); ++it1) {
       for (auto it2 = it1.begin(); it2 != it1.end(); ++it2) {
         auto r = row(a, it2.index2());
@@ -210,11 +210,17 @@ void semiring(SM &a, SM &b, SM &result) {
     }
 }
 
-void traverseGraph(SM &a, SM &result) {
-  int iterations = a.size1() - 2;
-  if (iterations % 2 == 0)
-    //n/2
-    |
+void semiring(SM &a, SM &aux, SM &result, int iterations) {
+  if (iterations == 2)
+    oneIt(a, a, result);
+  else if (iterations % 2 == 0){
+    semiring(a, a, aux, iterations/2);
+    oneIt(aux, aux, result);
+  }
+  else {
+    semiring(a, a, aux, (iterations -1));
+    oneIt(a, aux, result);
+  }
 
 
 
@@ -250,17 +256,18 @@ void fillMatrix(SM &m, string source) {
 
 int main(int argc, char const *argv[]) {
   ublas::compressed_matrix<int> m(264346, 264346);
-  //ublas::compressed_matrix<int> m(4, 4);
+  ublas::compressed_matrix<int> aux(264346, 264346);
   fillMatrix(m, "USA-road-d.NY.gr");
   //fillMatrix(m, "graph.txt");
   std::cout << "Non-zeroes: " << m.nnz() << '\n'
             << "Allocated storage for " << m.nnz_capacity() << '\n';
-  //ublas::compressed_matrix<int> c(4, 4);
-  ublas::compressed_matrix<int> c(264346, 264346);
+  ublas::compressed_matrix<int> c(4, 4);
+  //ublas::compressed_matrix<int> c(264346, 264346);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
   //mult(m, m, c);
-  semiring(m, m, c);
+  int iterations = m.size1() - 2;
+  semiring(m, aux, c, iterations);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<microseconds>(t2 - t1).count();
   cout << "duration was : " << duration << endl;
